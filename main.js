@@ -64,6 +64,7 @@ function homeSetup() {
 
   function selectChat(chat) {
     channel.value = chat.value.channel;
+    console.log(chat.value.channel);
     router.push(`/chat/${chat.value.channel}`);
   }
 
@@ -119,6 +120,7 @@ function homeSetup() {
         },
         session.value,
       );
+      console.log(myMessage.value);
       myMessage.value = "";
       selectedTone.value = "";
     } finally {
@@ -346,13 +348,6 @@ function loginSetup() {
   return {
     handleLogin,
     handleLogout
-  };
-}
-
-function appSetup() {
-  const session = useGraffitiSession();
-  return {
-    session
   };
 }
 
