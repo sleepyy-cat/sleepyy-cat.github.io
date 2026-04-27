@@ -9,6 +9,25 @@ import {
   useGraffitiDiscover,
 } from "@graffiti-garden/wrapper-vue";
 
+const ToneIndicator = {
+    template: "#tone-indicator-template",
+    props: {
+        tone: {
+            type: String,
+            default: ""
+        }
+    },
+    computed: {
+        toneText() {
+            return this.tone && this.tone !== "" ? this.tone : "No tone";
+        },
+        toneClass() {
+            if (!this.tone || this.tone === "") return "tone-neutral";
+            return `tone-${this.tone.toLowerCase()}`;
+        }
+    }
+};
+
 function homeSetup() {
   // Initialize Graffiti
   const graffiti = useGraffiti();
@@ -363,6 +382,7 @@ const router = createRouter({
 const App = { template: "#template", setup: homeSetup, components: {} };
 
 createApp(App)
+  .component("tone-indicator", ToneIndicator)
   .use(GraffitiPlugin, {
     // graffiti: new GraffitiLocal(),
     graffiti: new GraffitiDecentralized(),

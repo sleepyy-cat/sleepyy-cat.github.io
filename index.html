@@ -129,7 +129,7 @@
                             <strong>
                                 <graffiti-actor-to-handle :actor="object.actor">
                                 </graffiti-actor-to-handle> </strong
-                            >: {{ object.value.content }} ({{ object.value.tone === ""? "no tone" : object.value.tone }})
+                            >: {{ object.value.content }} <tone-indicator :tone="object.value.tone"></tone-indicator>
                             <button
                                 v-if="object.actor===$graffitiSession.value?.actor && editingMessage?.url !== object.url"
                                 @click="startEdit(object)" :disabled="isDeleting.has(object.url)"
@@ -190,6 +190,12 @@
                     </button>
                 </div>
             </div>
+        </template>
+
+        <template id="tone-indicator-template">
+            <span :class="['tone-indicator', toneClass]" :title="toneText">
+                {{ toneText }}
+            </span>
         </template>
     </body>
 </html>

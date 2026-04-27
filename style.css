@@ -131,3 +131,53 @@ a.router-link-active {
     color: black;
     text-decoration: none;
 }
+
+.tone-indicator {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75em;
+    font-weight: 500;
+    margin-left: 8px;
+    margin-right: 8px;
+}
+
+.tone-excited {
+    background-color: #ffe600;
+    color: #000;
+}
+
+.tone-happy {
+    background-color: #00ff08;
+    color: black;
+}
+
+.tone-joking {
+    background-color: #ff9800;
+    color: white;
+}
+
+.tone-neutral {
+    background-color: #ffffff;
+    color: black;
+}
+
+.tone-sad {
+    background-color: #008cff;
+    color: white;
+}
+
+.tone-bored {
+    background-color: #845646;
+    color: white;
+}
+
+.tone-annoyed {
+    background-color: #ff3c00;
+    color: white;
+}
+
+.tone-mad {
+    background-color: #ff0000;
+    color: white;
+}
