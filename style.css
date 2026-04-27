@@ -78,6 +78,46 @@ select {
     font-size: 1rem;
 }
 
+select option[value="Excited"] {
+    background-color: #ffe600;
+    color: #000;
+}
+
+select option[value="Happy"] {
+    background-color: #00ff08;
+    color: black;
+}
+
+select option[value="Joking"] {
+    background-color: #ff9800;
+    color: white;
+}
+
+select option[value="Neutral"] {
+    background-color: #ffffff;
+    color: black;
+}
+
+select option[value="Sad"] {
+    background-color: #008cff;
+    color: white;
+}
+
+select option[value="Bored"] {
+    background-color: #845646;
+    color: white;
+}
+
+select option[value="Annoyed"] {
+    background-color: #ff3c00;
+    color: white;
+}
+
+select option[value="Mad"] {
+    background-color: #ff0000;
+    color: white;
+}
+
 select:focus {
     outline: none;
     border-color: var(--color-2);
