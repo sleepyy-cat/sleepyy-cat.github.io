@@ -8,19 +8,22 @@
             {
                 "imports": {
                     "vue": "https://cdn.jsdelivr.net/npm/vue@3.5.32/dist/vue.esm-browser.js",
+                    "vue-router": "https://cdn.jsdelivr.net/npm/vue-router@5.0.4/dist/vue-router.esm-browser.prod.js",
                     "@graffiti-garden/implementation-local": "https://cdn.jsdelivr.net/npm/@graffiti-garden/implementation-local@1.2.0/dist/browser/index.js",
                     "@graffiti-garden/implementation-decentralized": "https://cdn.jsdelivr.net/npm/@graffiti-garden/implementation-decentralized@0.0.9/dist/browser/index.js",
                     "@graffiti-garden/wrapper-vue": "https://cdn.jsdelivr.net/npm/@graffiti-garden/wrapper-vue@1.2.2/dist/browser/plugin.mjs"
                 }
             }
         </script>
-        <script src="index.js" type="module"></script>
+        <script src="main.js" type="module"></script>
         <link rel="stylesheet" href="style.css" />
     </head>
     <body>
         <div id="app">Loading...</div>
         <template id="template">
-            <h1>My Chatroom</h1>
+            <router-link to="/">
+                <h1>My Chatroom</h1>
+            </router-link>
             <button v-if="!$graffitiSession.value" @click="$graffiti.login()">
                 Log In
             </button>
@@ -31,8 +34,7 @@
             </template>
 
             <h2>Chats</h2>
-            <p v-if="!channel">Select a chat to start messaging</p>
-            <p v-if="chats.length === 0 && !areMessageObjectsLoading">
+            <p v-if="chats.length === 0 && !areChatsLoading">
                 <em>No chats yet. Create one!</em>
             </p>
             <form @submit.prevent="newChat()">
@@ -44,11 +46,11 @@
                 />
                 <input type="submit" value="New Chat" :disabled="!newChatTitle.trim() || isCreatingChat"/>
             </form>
-            <ul v-else>
+            <ul v-if="chats.length > 0">
                 <li v-for="chat in sortedChats" :key="chat.url">
-                    <a href="#" @click.prevent="selectChat(chat)">
+                    <router-link :to="`/chat/${chat.value.channel}`" @click="selectChat(chat)">
                         {{ chat.value.title }}
-                    </a>
+                    </router-link>
                     <button 
                         v-if="chat.actor===$graffitiSession.value?.actor"
                         @click="startChatEdit(chat)"
@@ -82,80 +84,82 @@
                 </li>
             </ul>
 
-            <h2>Messages</h2>
-            <h3>Current chat: {{ currentChatTitle }}</h3>
-            <p v-if="areMessageObjectsLoading">
-                <em>Loading messages...</em>
-            </p>
-            <form @submit.prevent="sendMessage()">
-                <input
-                    type="text"
-                    v-model="myMessage"
-                    placeholder="Message"
-                />
-                <select v-model="selectedTone">
-                    <option value="">No tone</option>
-                    <option value="Excited">Excited</option>
-                    <option value="Happy">Happy</option>
-                    <option value="Joking">Joking</option>
-                    <option value="Neutral">Neutral</option>
-                    <option value="Sad">Sad</option>
-                    <option value="Bored">Bored</option>
-                    <option value="Annoyed">Annoyed</option>
-                    <option value="Mad">Mad</option>
-                </select>
-                <input
-                    type="submit"
-                    :value="isSending ? 'Sending...' : 'Send'"
-                    :disabled="!myMessage || isSending"
-                />
-            </form>
-            <ul v-else>
-                <li v-for="object of sortedMessageObjects" :key="object.url">
-                    <strong>
-                        <graffiti-actor-to-handle :actor="object.actor">
-                        </graffiti-actor-to-handle> </strong
-                    >: {{ object.value.content }} ({{ object.value.tone === ""? "no tone" : object.value.tone }})
-                    <button
-                        v-if="object.actor===$graffitiSession.value?.actor && editingMessage?.url !== object.url"
-                        @click="startEdit(object)" :disabled="isDeleting.has(object.url)"
-                    >
-                        Edit
-                    </button>
-                    <form v-if="editingMessage?.url === object.url">
-                        <input 
-                            type="text" 
-                            v-model="editContent" 
-                            placeholder="Edit message"
-                        />
-                        <select v-model="editTone">
-                            <option value="">No tone</option>
-                            <option value="Excited">Excited</option>
-                            <option value="Happy">Happy</option>
-                            <option value="Joking">Joking</option>
-                            <option value="Neutral">Neutral</option>
-                            <option value="Sad">Sad</option>
-                            <option value="Bored">Bored</option>
-                            <option value="Annoyed">Annoyed</option>
-                            <option value="Mad">Mad</option>
-                        </select>
-                        <button @click="saveEdit(object)" :disabled="isSavingEdit || isDeleting.has(object.url)">
-                            {{ isSavingEdit ? 'Saving...' : 'Save' }}
+            <div v-if="channel && $route.params.chatId" class="messaging-interface">
+                <h2>Messages</h2>
+                <h3>Current chat: {{ currentChatTitle }}</h3>
+                <p v-if="areMessageObjectsLoading">
+                    <em>Loading messages...</em>
+                </p>
+                <form @submit.prevent="sendMessage()">
+                    <input
+                        type="text"
+                        v-model="myMessage"
+                        placeholder="Message"
+                    />
+                    <select v-model="selectedTone">
+                        <option value="">No tone</option>
+                        <option value="Excited">Excited</option>
+                        <option value="Happy">Happy</option>
+                        <option value="Joking">Joking</option>
+                        <option value="Neutral">Neutral</option>
+                        <option value="Sad">Sad</option>
+                        <option value="Bored">Bored</option>
+                        <option value="Annoyed">Annoyed</option>
+                        <option value="Mad">Mad</option>
+                    </select>
+                    <input
+                        type="submit"
+                        :value="isSending ? 'Sending...' : 'Send'"
+                        :disabled="!myMessage || isSending"
+                    />
+                </form>
+                <ul v-if="!areMessageObjectsLoading">
+                    <li v-for="object of sortedMessageObjects" :key="object.url">
+                        <strong>
+                            <graffiti-actor-to-handle :actor="object.actor">
+                            </graffiti-actor-to-handle> </strong
+                        >: {{ object.value.content }} ({{ object.value.tone === ""? "no tone" : object.value.tone }})
+                        <button
+                            v-if="object.actor===$graffitiSession.value?.actor && editingMessage?.url !== object.url"
+                            @click="startEdit(object)" :disabled="isDeleting.has(object.url)"
+                        >
+                            Edit
                         </button>
-                        <button @click="cancelEdit" :disabled="isSavingEdit || isDeleting.has(object.url)">
-                            Cancel
+                        <form v-if="editingMessage?.url === object.url">
+                            <input 
+                                type="text" 
+                                v-model="editContent" 
+                                placeholder="Edit message"
+                            />
+                            <select v-model="editTone">
+                                <option value="">No tone</option>
+                                <option value="Excited">Excited</option>
+                                <option value="Happy">Happy</option>
+                                <option value="Joking">Joking</option>
+                                <option value="Neutral">Neutral</option>
+                                <option value="Sad">Sad</option>
+                                <option value="Bored">Bored</option>
+                                <option value="Annoyed">Annoyed</option>
+                                <option value="Mad">Mad</option>
+                            </select>
+                            <button @click="saveEdit(object)" :disabled="isSavingEdit || isDeleting.has(object.url)">
+                                {{ isSavingEdit ? 'Saving...' : 'Save' }}
+                            </button>
+                            <button @click="cancelEdit" :disabled="isSavingEdit || isDeleting.has(object.url)">
+                                Cancel
+                            </button>
+                        </form>
+                        <button
+                            v-if="object.actor===$graffitiSession.value?.actor"
+                            @click="deleteMessage(object)"
+                            :disabled="isDeleting.has(object.url) || (editingMessage?.url === object.url && isSavingEdit)"
+                        >
+                            {{ isDeleting.has(object.url) ? "Deleting..." : "Delete"
+                            }}
                         </button>
-                    </form>
-                    <button
-                        v-if="object.actor===$graffitiSession.value?.actor"
-                        @click="deleteMessage(object)"
-                        :disabled="isDeleting.has(object.url) || (editingMessage?.url === object.url && isSavingEdit)"
-                    >
-                        {{ isDeleting.has(object.url) ? "Deleting..." : "Delete"
-                        }}
-                    </button>
-                </li>
-            </ul>
+                    </li>
+                </ul>
+            </div>
         </template>
     </body>
 </html>

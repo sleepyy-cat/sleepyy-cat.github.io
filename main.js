@@ -1,4 +1,5 @@
-import { createApp, ref, computed } from "vue";
+import { createApp, ref, computed, watch } from "vue";
+import { createRouter, createWebHashHistory, useRoute, useRouter } from "vue-router";
 import { GraffitiLocal } from "@graffiti-garden/implementation-local";
 import { GraffitiDecentralized } from "@graffiti-garden/implementation-decentralized";
 import {
@@ -12,6 +13,9 @@ function setup() {
   // Initialize Graffiti
   const graffiti = useGraffiti();
   const session = useGraffitiSession();
+
+  const route = useRoute();
+  const router = useRouter();
 
   // This is the "directory" our messages will go in
   const channel = ref("my-general");
@@ -60,7 +64,14 @@ function setup() {
 
   function selectChat(chat) {
     channel.value = chat.value.channel;
+    router.push(`/chat/${chat.value.channel}`);
   }
+
+  watch(() => route.params.chatId, (chatId) => {
+    if (chatId) {
+      channel.value = chatId;
+    }
+  }, { immediate: true });
 
   // "Discover" messages in the chat
   const { objects: messageObjects, isFirstPoll: areMessageObjectsLoading } =
@@ -138,12 +149,13 @@ function setup() {
     }
     isCreatingChat.value = true;
     try {
+        const chatChannel = crypto.randomUUID();
         await graffiti.post(
         {
             value: {
             activity: "Create",
             type: "Chat",
-            channel: crypto.randomUUID(),
+            channel: chatChannel,
             title: newChatTitle.value,
             published: Date.now(),
             },
@@ -152,6 +164,8 @@ function setup() {
         session.value,
         );
         newChatTitle.value = "";
+        // Navigate to the new chat
+        router.push(`/chat/${chatChannel}`);
     } finally {
         isCreatingChat.value = false;
     }
@@ -232,6 +246,9 @@ function setup() {
         }
         
         await graffiti.delete(chat, session.value);
+        if (channel.value === chatChannel) {
+          router.push("/");
+        }
     } finally {
         isDeletingChat.value.delete(chat.url);
     }
@@ -309,6 +326,14 @@ function setup() {
   };
 }
 
+const router = createRouter({
+  history: createWebHashHistory(),
+  routes: [
+    { path: "/", component: { template: "#template", setup } },
+    { path: "/chat/:chatId", component: { template: "#template", setup }, props: true },
+  ],
+});
+
 const App = { template: "#template", setup };
 
 createApp(App)
@@ -316,4 +341,5 @@ createApp(App)
     // graffiti: new GraffitiLocal(),
     graffiti: new GraffitiDecentralized(),
   })
+  .use(router)
   .mount("#app");
