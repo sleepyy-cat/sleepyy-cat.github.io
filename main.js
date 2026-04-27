@@ -365,7 +365,7 @@ const router = createRouter({
   ],
 });
 
-const App = { template: "#template", setup: appSetup, components: {} };
+const App = { template: "#template", setup: homeSetup, components: {} };
 
 createApp(App)
   .use(GraffitiPlugin, {
