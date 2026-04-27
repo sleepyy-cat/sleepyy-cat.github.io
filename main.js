@@ -9,7 +9,7 @@ import {
   useGraffitiDiscover,
 } from "@graffiti-garden/wrapper-vue";
 
-function setup() {
+function homeSetup() {
   // Initialize Graffiti
   const graffiti = useGraffiti();
   const session = useGraffitiSession();
@@ -326,15 +326,46 @@ function setup() {
   };
 }
 
+function loginSetup() {
+  const graffiti = useGraffiti();
+  const session = useGraffitiSession();
+  const router = useRouter();
+
+  async function handleLogin() {
+    await graffiti.login();
+    router.push("/");
+  }
+
+  async function handleLogout() {
+    if (session.value) {
+        await graffiti.logout(session.value);
+        router.push("/");
+    }
+  }
+
+  return {
+    handleLogin,
+    handleLogout
+  };
+}
+
+function appSetup() {
+  const session = useGraffitiSession();
+  return {
+    session
+  };
+}
+
 const router = createRouter({
   history: createWebHashHistory(),
   routes: [
-    { path: "/", component: { template: "#template", setup } },
-    { path: "/chat/:chatId", component: { template: "#template", setup }, props: true },
+    { path: "/", component: { template: "#home-template", setup: homeSetup }, name: "home" },
+    { path: "/chat/:chatId", component: { template: "#home-template", setup: homeSetup }, name: "chat", props: true },
+    { path: "/login", component: { template: "#login-template", setup: loginSetup }, name: "login" }
   ],
 });
 
-const App = { template: "#template", setup };
+const App = { template: "#template", setup: appSetup, components: {} };
 
 createApp(App)
   .use(GraffitiPlugin, {

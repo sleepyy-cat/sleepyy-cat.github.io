@@ -50,6 +50,13 @@ button:hover, main > button:hover, form input[type="submit"]:hover{
     box-shadow: 0 0.05rem 0.15rem purple;
 }
 
+.authentication-button {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1rem;
+    text-decoration: none;
+}
+
 input {
     padding: 1rem;
     font-size: 1rem;
