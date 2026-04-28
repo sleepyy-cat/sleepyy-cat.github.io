@@ -102,12 +102,29 @@
                 <div v-if="channel && $route.params.chatId" class="messaging-interface">
                     <h2>Messages</h2>
                     <h3>Current chat: {{ currentChatTitle }}</h3>
+                    <div class="tone-search">
+                        <label>Filter by tone: </label>
+                        <select v-model="selectedToneFilter">
+                            <option value="">All tones</option>
+                            <option value="None">No tone</option>
+                            <option value="Excited">Excited</option>
+                            <option value="Happy">Happy</option>
+                            <option value="Joking">Joking</option>
+                            <option value="Neutral">Neutral</option>
+                            <option value="Sad">Sad</option>
+                            <option value="Bored">Bored</option>
+                            <option value="Annoyed">Annoyed</option>
+                            <option value="Mad">Mad</option>
+                        </select>
+                        <span v-if="filteredMessagesCount !== sortedMessageObjects.length" class="filter-stats">
+                            Showing {{ filteredMessagesCount }} of {{ sortedMessageObjects.length }} messages
+                            <button @click="selectedToneFilter = ''">Clear</button>
+                        </span>
+                    </div>
                     <p v-if="areMessageObjectsLoading && channel">
                         <em>Loading messages...</em>
                     </p>
-                    <div v-else if="!channel">
-                        
-                    </div>
+                    <div v-else if="!channel"></div>
                     <form v-if="$graffitiSession.value" @submit.prevent="sendMessage()">
                         <input
                             type="text"
@@ -135,7 +152,7 @@
                         <p>Please <router-link to="/login">log in</router-link> to send messages</p>
                     </div>
                     <ul v-if="!areMessageObjectsLoading">
-                        <li v-for="object of sortedMessageObjects" :key="object.url">
+                        <li v-for="object of filteredMessageObjects" :key="object.url">
                             <strong>
                                 <graffiti-actor-to-handle :actor="object.actor">
                                 </graffiti-actor-to-handle> </strong

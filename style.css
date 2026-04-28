@@ -158,6 +158,10 @@ input[type="submit"]:disabled {
     opacity: 0.6;
 }
 
+.tone-search {
+    margin-bottom: 1rem;
+}
+
 a {
     padding-right: 1.5rem;
     font-size: 1.1rem;

@@ -123,6 +123,20 @@ function homeSetup() {
     });
   });
 
+  const selectedToneFilter = ref("");
+  const filteredMessageObjects = computed(() => {
+      if (!selectedToneFilter.value) {
+          return sortedMessageObjects.value;
+      }
+      if (selectedToneFilter.value === "None") {
+        return sortedMessageObjects.value.filter(msg => !msg.value.tone || msg.value.tone === "");
+      }
+      return sortedMessageObjects.value.filter(msg => 
+          (msg.value.tone || "") === selectedToneFilter.value
+      );
+  });
+  const filteredMessagesCount = computed(() => filteredMessageObjects.value.length);
+
   // A function to send a message.
   // Since the function is async, we
   // create an "isSending" signal for
@@ -363,7 +377,10 @@ function homeSetup() {
     isSavingChatEdit,
     startChatEdit,
     saveChatEdit,
-    cancelChatEdit
+    cancelChatEdit,
+    selectedToneFilter,
+    filteredMessageObjects,
+    filteredMessagesCount
   };
 }
 
