@@ -116,7 +116,7 @@
                             <option value="Annoyed">Annoyed</option>
                             <option value="Mad">Mad</option>
                         </select>
-                        <span v-if="filteredMessagesCount !== sortedMessageObjects.length" class="filter-stats">
+                        <span v-if="filteredMessagesCount !== sortedMessageObjects.length && sortedMessageObjects.length > 0" class="filter-stats">
                             Showing {{ filteredMessagesCount }} of {{ sortedMessageObjects.length }} messages
                             <button @click="selectedToneFilter = ''">Clear</button>
                         </span>
