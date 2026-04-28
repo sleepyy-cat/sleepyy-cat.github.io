@@ -48,7 +48,7 @@
                 <p v-if="chats.length === 0 && !areChatsLoading">
                     <em>No chats yet. Create one!</em>
                 </p>
-                <form @submit.prevent="newChat()">
+                <form v-if="$graffitiSession.value" @submit.prevent="newChat()">
                     <input
                         type="text"
                         v-model="newChatTitle"
@@ -57,13 +57,16 @@
                     />
                     <input type="submit" value="New Chat" :disabled="!newChatTitle.trim() || isCreatingChat"/>
                 </form>
+                <p v-else class="login-required-message">
+                    Please <router-link to="/login">log in</router-link> to create new chats
+                </p>
                 <ul v-if="chats.length > 0">
                     <li v-for="chat in sortedChats" :key="chat.url">
                         <router-link :to="`/chat/${chat.value.channel}`" @click="selectChat(chat)">
                             {{ chat.value.title }}
                         </router-link>
                         <button 
-                            v-if="chat.actor===$graffitiSession.value?.actor"
+                            v-if="chat.actor===$graffitiSession.value?.actor && $graffitiSession.value"
                             @click="startChatEdit(chat)"
                             :disabled="isDeletingChat.has(chat.url)"
                         >
@@ -86,7 +89,8 @@
                                 </button>
                             </form>
                         </template>
-                        <button 
+                        <button
+                            v-if="chat.actor === $graffitiSession.value?.actor && $graffitiSession.value"
                             @click="deleteChat(chat)" 
                             :disabled="isDeletingChat.has(chat.url)  || (editingChat?.url === chat.url && isSavingChatEdit)"
                             >
@@ -101,7 +105,7 @@
                     <p v-if="areMessageObjectsLoading">
                         <em>Loading messages...</em>
                     </p>
-                    <form @submit.prevent="sendMessage()">
+                    <form v-if="$graffitiSession.value" @submit.prevent="sendMessage()">
                         <input
                             type="text"
                             v-model="myMessage"
@@ -124,6 +128,9 @@
                             :disabled="!myMessage || isSending"
                         />
                     </form>
+                    <div v-else class="login-required-message">
+                        <p>Please <router-link to="/login">log in</router-link> to send messages</p>
+                    </div>
                     <ul v-if="!areMessageObjectsLoading">
                         <li v-for="object of sortedMessageObjects" :key="object.url">
                             <strong>

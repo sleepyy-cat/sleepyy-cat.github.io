@@ -126,6 +126,9 @@ function homeSetup() {
   // displaying feedback.
   const isSending = ref(false);
   async function sendMessage() {
+    if (!session.value) {
+      return;
+    }
     isSending.value = true;
     try {
       await graffiti.post(
@@ -153,6 +156,9 @@ function homeSetup() {
   // displaying feedback.
   const isDeleting = ref(new Set());
   async function deleteMessage(message) {
+    if (!session.value || message.actor !== session.value.actor) {
+      return;
+    }
     if (!confirm(`Are you sure you want to delete the message "${message.value.content}"? This action is irreversible.`)) {
         return;
     }
@@ -165,7 +171,7 @@ function homeSetup() {
   }
 
   async function newChat() {
-    if (!newChatTitle.value.trim() || isCreatingChat.value) {
+    if (!newChatTitle.value.trim() || isCreatingChat.value || !session.value) {
         return;
     }
     isCreatingChat.value = true;
@@ -185,7 +191,6 @@ function homeSetup() {
         session.value,
         );
         newChatTitle.value = "";
-        // Navigate to the new chat
         router.push(`/chat/${chatChannel}`);
     } finally {
         isCreatingChat.value = false;
@@ -199,7 +204,7 @@ function homeSetup() {
   }
   
   async function saveEdit(message) {
-    if (!editContent.value.trim()) {
+    if (!editContent.value.trim() || !session.value || message.actor !== session.value.actor) {
         return;
     }
     isSavingEdit.value = true;
@@ -236,6 +241,9 @@ function homeSetup() {
 
   const isDeletingChat = ref(new Set());
   async function deleteChat(chat) {
+    if (!session.value || chat.actor !== session.value.actor) {
+      return;
+    }
     if (!confirm(`Are you sure you want to delete the chat "${chat.value.title}"? This will also delete all messages in this chat.`)) {
         return;
     }
@@ -281,7 +289,7 @@ function homeSetup() {
   }
   
   async function saveChatEdit(chat) {
-    if (!editChatTitle.value.trim() || isSavingChatEdit.value) {
+    if (!editChatTitle.value.trim() || isSavingChatEdit.value || !session.value || chat.actor !== session.value.actor) {
         return;
     }
     isSavingChatEdit.value = true;
