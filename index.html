@@ -102,9 +102,12 @@
                 <div v-if="channel && $route.params.chatId" class="messaging-interface">
                     <h2>Messages</h2>
                     <h3>Current chat: {{ currentChatTitle }}</h3>
-                    <p v-if="areMessageObjectsLoading">
+                    <p v-if="areMessageObjectsLoading && channel">
                         <em>Loading messages...</em>
                     </p>
+                    <div v-else if="!channel">
+                        
+                    </div>
                     <form v-if="$graffitiSession.value" @submit.prevent="sendMessage()">
                         <input
                             type="text"

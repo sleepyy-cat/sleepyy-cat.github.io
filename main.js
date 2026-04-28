@@ -37,7 +37,7 @@ function homeSetup() {
   const router = useRouter();
 
   // This is the "directory" our messages will go in
-  const channel = ref("my-general");
+  const channel = ref("");
 
   // Declare a signal for the message entered in the chat
   const myMessage = ref("");
@@ -88,15 +88,18 @@ function homeSetup() {
   }
 
   watch(() => route.params.chatId, (chatId) => {
-    if (chatId) {
+    if (chatId && typeof chatId === 'string') {
       channel.value = chatId;
+    } else if (!chatId) {
+      channel.value = "";
     }
   }, { immediate: true });
 
   // "Discover" messages in the chat
+  const messagesKey = computed(() => channel.value);
   const { objects: messageObjects, isFirstPoll: areMessageObjectsLoading } =
     useGraffitiDiscover(
-      () => [channel.value],
+      () => messagesKey.value ? [messagesKey.value] : [],
       {
         properties: {
           value: {
@@ -162,6 +165,7 @@ function homeSetup() {
     if (!confirm(`Are you sure you want to delete the message "${message.value.content}"? This action is irreversible.`)) {
         return;
     }
+    console.log(message);
     isDeleting.value.add(message.url);
     try {
       await graffiti.delete(message, session.value);
@@ -191,6 +195,7 @@ function homeSetup() {
         session.value,
         );
         newChatTitle.value = "";
+        console.log(chatChannel);
         router.push(`/chat/${chatChannel}`);
     } finally {
         isCreatingChat.value = false;
@@ -198,6 +203,7 @@ function homeSetup() {
   }
 
   function startEdit(message) {
+    console.log(message);
     editingMessage.value = message;
     editContent.value = message.value.content;
     editTone.value = message.value.tone || "";
@@ -209,6 +215,7 @@ function homeSetup() {
     }
     isSavingEdit.value = true;
     try {
+        console.log(message);
         await graffiti.delete(message, session.value);
         await graffiti.post(
             {
@@ -229,6 +236,7 @@ function homeSetup() {
   }
 
   function cancelEdit() {
+    console.log("hi");
     editingMessage.value = null;
     editContent.value = "";
     editTone.value = "";
@@ -273,6 +281,7 @@ function homeSetup() {
         for (const message of messagesInChat.value) {
             await graffiti.delete(message, session.value);
         }
+        console.log(messagesInChat);
         
         await graffiti.delete(chat, session.value);
         if (channel.value === chatChannel) {
@@ -284,6 +293,7 @@ function homeSetup() {
   }
 
   function startChatEdit(chat) {
+    console.log(chat);
     editingChat.value = chat;
     editChatTitle.value = chat.value.title;
   }
@@ -292,6 +302,7 @@ function homeSetup() {
     if (!editChatTitle.value.trim() || isSavingChatEdit.value || !session.value || chat.actor !== session.value.actor) {
         return;
     }
+    console.log(chat);
     isSavingChatEdit.value = true;
     try {
         await graffiti.delete(chat, session.value);
@@ -315,6 +326,7 @@ function homeSetup() {
   }
   
   function cancelChatEdit() {
+    console.timeLog(editingChat);
     editingChat.value = null;
     editChatTitle.value = "";
   }
