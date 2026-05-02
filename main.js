@@ -128,7 +128,7 @@ function homeSetup() {
       if (!selectedToneFilter.value) {
           return sortedMessageObjects.value;
       }
-      if (selectedToneFilter.value === "None") {
+      if (selectedToneFilter.value === "No tone") {
         return sortedMessageObjects.value.filter(msg => !msg.value.tone || msg.value.tone === "");
       }
       return sortedMessageObjects.value.filter(msg => 
@@ -136,6 +136,53 @@ function homeSetup() {
       );
   });
   const filteredMessagesCount = computed(() => filteredMessageObjects.value.length);
+
+  const messagesContainer = ref(null);
+  const shouldAutoScroll = ref(true);
+  const scrollToBottom = () => {
+    if (shouldAutoScroll.value && messagesContainer.value) {
+      setTimeout(() => {
+        if (messagesContainer.value && shouldAutoScroll.value) {
+          messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+        }
+      }, 0);
+    }
+  };
+  
+  const handleScroll = () => {
+    if (!messagesContainer.value) return;
+    const container = messagesContainer.value;
+    const isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 10;
+    if (isAtBottom) {
+      shouldAutoScroll.value = true;
+    } else {
+      shouldAutoScroll.value = false;
+    }
+  };
+
+  watch(messagesContainer, (container) => {
+    if (container) {
+      container.addEventListener('scroll', handleScroll);
+      shouldAutoScroll.value = true;
+      scrollToBottom();
+    }
+    return () => {
+      if (container) {
+        container.removeEventListener('scroll', handleScroll);
+      }
+    };
+  });
+
+  watch(sortedMessageObjects, (newMessages, oldMessages) => {
+    if (newMessages.length !== oldMessages?.length) {
+      scrollToBottom();
+    }
+  });
+  
+  watch(filteredMessagesCount, () => {
+    shouldAutoScroll.value = true;
+    scrollToBottom();
+  });
 
   // A function to send a message.
   // Since the function is async, we
@@ -146,6 +193,7 @@ function homeSetup() {
     if (!session.value) {
       return;
     }
+    shouldAutoScroll.value = true;
     isSending.value = true;
     try {
       await graffiti.post(
@@ -162,6 +210,7 @@ function homeSetup() {
       console.log(myMessage.value);
       myMessage.value = "";
       selectedTone.value = "";
+      scrollToBottom();
     } finally {
       isSending.value = false;
     }
@@ -380,7 +429,8 @@ function homeSetup() {
     cancelChatEdit,
     selectedToneFilter,
     filteredMessageObjects,
-    filteredMessagesCount
+    filteredMessagesCount,
+    messagesContainer
   };
 }
 

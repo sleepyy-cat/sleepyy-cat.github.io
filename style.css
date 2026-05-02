@@ -1,12 +1,14 @@
 * {
     --color-1: #1a5ccd;
     --color-2: #9d66df;
+    --color-3: rgb(237, 155, 237);
+    --color-4: rgb(120, 120, 221);
     color: var(--color-1);
 }
 
 body {
     font-family: monospace;
-    background: linear-gradient(rgb(237, 155, 237), rgb(120, 120, 221));
+    background: linear-gradient(var(--color-3), var(--color-4));
     min-height: 100vh;
     padding: 3rem;
     color: var(--color-1);
@@ -57,14 +59,18 @@ button:hover, main > button:hover, form input[type="submit"]:hover{
     text-decoration: none;
 }
 
-input {
+input, textarea {
     padding: 1rem;
     font-size: 1rem;
     border: 0.1rem solid transparent;
     background: white;
 }
 
-input:focus {
+textarea {
+    min-width: 30rem;
+}
+
+input:focus, textarea:focus {
     outline: none;
     border-color: var(--color-2);
     background: white;
@@ -167,8 +173,75 @@ a {
     font-size: 1.1rem;
 }
 
-li {
+ul, li {
     padding: 0.5rem 0.5rem;
+    list-style: none;
+    margin-left: 0;
+    padding-left: 0;
+}
+
+.messages-container {
+    height: 20rem;
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    margin: 0.5rem 0;
+    padding: 0.5rem;
+}
+
+.messages-container li {
+    background: var(--color-3);
+    border-radius: 1rem;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+    grid-template-columns: auto auto 1fr auto;
+    gap: 0.5rem;
+    align-items: start;
+    align-self: flex-start;
+    margin-bottom: 0.75rem;
+    padding: 0.75rem;
+    width: fit-content;
+    max-width: 80%;
+}
+
+.messages-container li.own-message {
+    align-self: flex-end;
+}
+
+.messages-container li .message-row {
+    display: grid;
+    grid-template-columns: auto auto 1fr auto;
+    gap: 0.5rem;
+    align-items: start;
+}
+
+.messages-container li tone-indicator {
+    grid-column: 1;
+}
+
+.messages-container li strong {
+    grid-column: 2;
+    white-space: nowrap;
+}
+
+.messages-container li .message-text {
+    grid-column: 3;
+    word-wrap: break-word;
+    word-break: break-word;
+    min-width: 0;
+}
+
+.messages-container li button {
+    grid-column: 4;
+    white-space: nowrap;
+    align-self: center;
+}
+
+.messages-container li form {
+    grid-column: 1 / -1;
+    margin-top: 0.5rem;
 }
 
 a.router-link-active {
