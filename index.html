@@ -43,62 +43,122 @@
                         Log Out
                     </button>
                 </template>
-
-                <h2>Chats</h2>
-                <p v-if="chats.length === 0 && !areChatsLoading">
-                    <em>No chats yet. Create one!</em>
-                </p>
-                <form v-if="$graffitiSession.value" @submit.prevent="newChat()">
-                    <input
-                        type="text"
-                        v-model="newChatTitle"
-                        placeholder="Chat title"
-                        required
-                    />
-                    <input type="submit" :value="isCreatingChat? 'Creating Chat...': 'Create Chat'" :disabled="!newChatTitle.trim() || isCreatingChat"></input>
-                </form>
-                <p v-else class="login-required-message">
-                    Please <router-link to="/login">log in</router-link> to create new chats
-                </p>
-                <ul v-if="chats.length > 0">
-                    <li v-for="chat in sortedChats" :key="chat.url">
-                        <router-link :to="`/chat/${chat.value.channel}`" @click="selectChat(chat)">
-                            {{ chat.value.title }}
-                        </router-link>
-                        <button 
-                            v-if="chat.actor===$graffitiSession.value?.actor && $graffitiSession.value"
-                            @click="startChatEdit(chat)"
-                            :disabled="isDeletingChat.has(chat.url)"
-                        >
-                            Edit
-                        </button>
-                        <template v-if="editingChat?.url === chat.url">
-                            <form @submit.prevent="saveChatEdit(chat)" style="display: inline;">
-                                <input 
-                                    type="text" 
-                                    v-model="editChatTitle" 
-                                    :placeholder="chat.value.title"
-                                    required
-                                    @click.stop
-                                />
-                                <button type="submit" :disabled="isSavingChatEdit || !editChatTitle.trim()">
-                                    {{ isSavingChatEdit ? 'Saving...' : 'Save' }}
-                                </button>
-                                <button type="button" @click="cancelChatEdit" :disabled="isSavingChatEdit">
-                                    Cancel
-                                </button>
-                            </form>
-                        </template>
-                        <button
-                            v-if="chat.actor === $graffitiSession.value?.actor && $graffitiSession.value"
-                            @click="deleteChat(chat)" 
-                            :disabled="isDeletingChat.has(chat.url)  || (editingChat?.url === chat.url && isSavingChatEdit)"
+                <div v-if="!isInChat" class="chat-list-container">
+                    <h2>Chats</h2>
+                    <p v-if="chats.length === 0 && !areChatsLoading">
+                        <em>No chats yet. Create one!</em>
+                    </p>
+                    <form v-if="$graffitiSession.value" @submit.prevent="newChat()">
+                        <input
+                            type="text"
+                            v-model="newChatTitle"
+                            placeholder="Chat title"
+                            required
+                        />
+                        <input type="submit" :value="isCreatingChat? 'Creating Chat...': 'Create Chat'" :disabled="!newChatTitle.trim() || isCreatingChat"></input>
+                        <p v-show="isCreatingChat">Creating Chat...</p>
+                    </form>
+                    <p v-else class="login-required-message">
+                        Please <router-link to="/login">log in</router-link> to create new chats
+                    </p>
+                    <ul v-if="chats.length > 0">
+                        <li v-for="chat in sortedChats" :key="chat.url">
+                            <router-link :to="`/chat/${chat.value.channel}`" @click="selectChat(chat)">
+                                {{ chat.value.title }}
+                            </router-link>
+                            <button 
+                                v-if="chat.actor===$graffitiSession.value?.actor && $graffitiSession.value"
+                                @click="startChatEdit(chat)"
+                                :disabled="isDeletingChat.has(chat.url)"
                             >
-                            {{ isDeletingChat.has(chat.url) ? "Deleting..." : "Delete" }}
-                        </button>
-                    </li>
-                </ul>
-
+                                Edit
+                            </button>
+                            <template v-if="editingChat?.url === chat.url">
+                                <form @submit.prevent="saveChatEdit(chat)" style="display: inline;">
+                                    <input 
+                                        type="text" 
+                                        v-model="editChatTitle" 
+                                        :placeholder="chat.value.title"
+                                        required
+                                        @click.stop
+                                    />
+                                    <button type="submit" :disabled="isSavingChatEdit || !editChatTitle.trim()">
+                                        {{ isSavingChatEdit ? 'Saving...' : 'Save' }}
+                                    </button>
+                                    <p v-show="isSavingChatEdit">Saving chat edit...</p>
+                                    <button type="button" @click="cancelChatEdit" :disabled="isSavingChatEdit">
+                                        Cancel
+                                    </button>
+                                </form>
+                            </template>
+                            <button
+                                v-if="chat.actor === $graffitiSession.value?.actor && $graffitiSession.value"
+                                @click="deleteChat(chat)" 
+                                :disabled="isDeletingChat.has(chat.url)  || (editingChat?.url === chat.url && isSavingChatEdit)"
+                                >
+                                {{ isDeletingChat.has(chat.url) ? "Deleting..." : "Delete" }}
+                            </button>
+                            <p v-show="isDeletingChat.has(chat.url)">Deleting chat...</p>
+                        </li>
+                    </ul>
+                </div>
+                <div v-else style="margin-top: 1rem;">
+                    <router-link to="/">
+                        Return to Home Page
+                    </router-link>
+                </div>
+                <button v-if="$graffitiSession.value" @click="toggleColorsSection" class="toggle-colors-btn" style="margin-top: 1rem;">
+                    {{ showColorsSection ? 'Hide' : 'Show' }} Colors Section
+                </button>
+                <div v-show="showColorsSection && $graffitiSession.value">
+                    <h2>Customize Tone Colors</h2>
+                    <h3>These colors only appear for you</h3>
+                    <div class="colors">
+                        <div v-for="(color, toneName) in toneColors" :key="toneName">
+                            <div class="tone-color">
+                                <span style="text-transform: capitalize;">{{ toneName === 'noTone' ? 'No tone' : toneName }}:</span>
+                                <div
+                                    :style="{ backgroundColor: color, width: '1.5rem', height: '1.5rem', 
+                                    border: '1px solid #ffffff', borderRadius: '0.2rem' }"
+                                    @click="startToneEdit(toneName)"
+                                ></div>
+                                <span>{{ color }}</span>
+                            </div>
+                            <form v-if="editingTone === toneName" @submit.prevent="saveToneColor" style="margin-bottom: 0.5rem;">
+                                <label>Background:</label>
+                                <input 
+                                    type="color" 
+                                    v-model="editingToneColor"
+                                    style="width: 3rem; height: 3rem; border: none; padding: 0;"
+                                />
+                                <label>Text:</label>
+                                <input 
+                                    type="color" 
+                                    v-model="editingToneTextColor"
+                                    style="width: 3rem; height: 3rem; border: none; padding: 0;"
+                                />
+                                <div 
+                                    :style="{ 
+                                        backgroundColor: editingToneColor, 
+                                        color: editingToneTextColor,
+                                        width: '100px',
+                                        height: '60px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        borderRadius: '0.2rem',
+                                        padding: '0 10px'
+                                    }"
+                                >
+                                    Sample Text
+                                </div>
+                                <button type="submit">Save</button>
+                                <button type="button" @click="cancelToneEdit">Cancel</button>
+                            </form>
+                        </div>
+                    </div>
+                    <button @click="resetToDefaults">Reset to Default Colors</button>
+                </div>
                 <div v-if="channel && $route.params.chatId" class="messaging-interface">
                     <h2>Messages</h2>
                     <h3>Current chat: {{ currentChatTitle }}</h3>
@@ -127,6 +187,8 @@
                     <div v-else if="!channel"></div>
                     <ul v-if="!areMessageObjectsLoading" class="messages-container" ref="messagesContainer">
                         <li v-for="object of filteredMessageObjects" :key="object.url" :class="{ 'own-message': object.actor === $graffitiSession.value?.actor }">
+                            <p v-show="isSavingEdit">Saving edit...</p>
+                            <p v-show="isDeleting.has(object.url)">Deleting message...</p>
                             <div class="message-row">
                                 <tone-indicator :tone="object.value.tone"></tone-indicator>
                                 <strong>
@@ -153,6 +215,7 @@
                                     type="text" 
                                     v-model="editContent" 
                                     placeholder="Edit message"
+                                    @keydown="handleEditKeydown"
                                 ></textarea>
                                 <select v-model="editTone">
                                     <option value="">No tone</option>
@@ -179,6 +242,7 @@
                             type="text"
                             v-model="myMessage"
                             placeholder="Message"
+                            @keydown="handleMessageKeydown"
                         ></textarea>
                         <select v-model="selectedTone">
                             <option value="">No tone</option>
@@ -196,6 +260,7 @@
                             :value="isSending ? 'Sending...' : 'Send'"
                             :disabled="!myMessage || isSending"
                         />
+                        <p v-show="isSending">Sending...</p>
                     </form>
                     <div v-else class="login-required-message">
                         <p>Please <router-link to="/login">log in</router-link> to send messages</p>
@@ -228,9 +293,13 @@
         </template>
 
         <template id="tone-indicator-template">
-            <span :class="['tone-indicator', toneClass]" :title="toneText">
-                {{ toneText }}
-            </span>
-        </template>
+    <span 
+        :class="['tone-indicator', toneClass]" 
+        :title="toneText"
+        :style="{ backgroundColor: getToneColor, color: getToneTextColor }"
+    >
+        {{ toneText }}
+    </span>
+</template>
     </body>
 </html>

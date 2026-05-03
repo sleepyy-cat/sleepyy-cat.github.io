@@ -9,6 +9,65 @@ import {
   useGraffitiDiscover,
 } from "@graffiti-garden/wrapper-vue";
 
+function useTonePreferences() {
+  const STORAGE_KEY = 'tone-preferences';
+  
+  const defaultColors = {
+    excited: '#ffe600',
+    happy: '#00ff08',
+    joking: '#ff9800',
+    neutral: '#ffffff',
+    sad: '#008cff',
+    bored: '#845646',
+    annoyed: '#ff3c00',
+    mad: '#ff0000',
+    noTone: '#ffffff'
+  };
+  
+  const defaultTextColors = {
+    excited: '#000000',
+    happy: '#000000',
+    joking: '#000000',
+    neutral: '#000000',
+    sad: '#ffffff',
+    bored: '#ffffff',
+    annoyed: '#ffffff',
+    mad: '#ffffff',
+    noTone: '#000000'
+  };
+  
+  const toneColors = ref(JSON.parse(localStorage.getItem(STORAGE_KEY + '_bg') || 'null') || defaultColors);
+  const toneTextColors = ref(JSON.parse(localStorage.getItem(STORAGE_KEY + '_text') || 'null') || defaultTextColors);
+  
+  const updateToneColor = (tone, color, textColor) => {
+    toneColors.value = {
+      ...toneColors.value,
+      [tone]: color
+    };
+    toneTextColors.value = {
+      ...toneTextColors.value,
+      [tone]: textColor
+    };
+    localStorage.setItem(STORAGE_KEY + '_bg', JSON.stringify(toneColors.value));
+    localStorage.setItem(STORAGE_KEY + '_text', JSON.stringify(toneTextColors.value));
+  };
+  
+  const resetToDefaults = () => {
+    toneColors.value = defaultColors;
+    toneTextColors.value = defaultTextColors;
+    localStorage.setItem(STORAGE_KEY + '_bg', JSON.stringify(defaultColors));
+    localStorage.setItem(STORAGE_KEY + '_text', JSON.stringify(defaultTextColors));
+  };
+  
+  return {
+    toneColors,
+    toneTextColors,
+    updateToneColor,
+    resetToDefaults
+  };
+}
+
+// Update ToneIndicator component:
 const ToneIndicator = {
     template: "#tone-indicator-template",
     props: {
@@ -17,14 +76,34 @@ const ToneIndicator = {
             default: ""
         }
     },
-    computed: {
-        toneText() {
-            return this.tone && this.tone !== "" ? this.tone : "No tone";
-        },
-        toneClass() {
-            if (!this.tone || this.tone === "") return "tone-neutral";
-            return `tone-${this.tone.toLowerCase()}`;
-        }
+    setup(props) {
+        const { toneColors, toneTextColors } = useTonePreferences();
+        
+        const toneText = computed(() => {
+            return props.tone && props.tone !== "" ? props.tone : "No tone";
+        });
+        
+        const toneClass = computed(() => {
+            if (!props.tone || props.tone === "") return "tone-noTone";
+            return `tone-${props.tone.toLowerCase()}`;
+        });
+        
+        const getToneColor = computed(() => {
+            const toneKey = props.tone ? props.tone.toLowerCase() : 'noTone';
+            return toneColors.value[toneKey] || toneColors.value.noTone;
+        });
+        
+        const getToneTextColor = computed(() => {
+            const toneKey = props.tone ? props.tone.toLowerCase() : 'noTone';
+            return toneTextColors.value[toneKey] || toneTextColors.value.noTone;
+        });
+        
+        return { 
+            toneText,
+            toneClass,
+            getToneColor,
+            getToneTextColor
+        };
     }
 };
 
@@ -394,6 +473,92 @@ function homeSetup() {
     editChatTitle.value = "";
   }
 
+  const { toneColors, toneTextColors, updateToneColor, resetToDefaults } = useTonePreferences();
+  const editingTone = ref(null);
+  const editingToneColor = ref("");
+  const editingToneTextColor = ref("");
+  
+  function startToneEdit(tone) {
+    editingTone.value = tone;
+    editingToneColor.value = toneColors.value[tone] || toneColors.value.noTone;
+    editingToneTextColor.value = toneTextColors.value[tone] || toneTextColors.value.noTone;
+  }
+  
+  function saveToneColor() {
+    if (editingTone.value && editingToneColor.value) {
+      updateToneColor(editingTone.value, editingToneColor.value, editingToneTextColor.value);
+      editingTone.value = null;
+      editingToneColor.value = "";
+      editingToneTextColor.value = "";
+    }
+  }
+  
+  function cancelToneEdit() {
+    editingTone.value = null;
+    editingToneColor.value = "";
+    editingToneTextColor.value = "";
+  }
+
+  const dynamicDropdownStyles = computed(() => {
+  let styles = '';
+  for (const [tone, color] of Object.entries(toneColors.value)) {
+    const toneName = tone === 'noTone' ? 'No tone' : tone.charAt(0).toUpperCase() + tone.slice(1);
+    const textColor = toneTextColors.value[tone];
+    styles += `
+      select option[value="${toneName}"],
+      select option[value="${tone === 'noTone' ? 'No tone' : toneName}"],
+      .tone-${tone} {
+        background-color: ${color} !important;
+        color: ${textColor} !important;
+      }
+    `;
+  }
+  return styles;
+});
+
+  const styleTag = ref(null);
+  watch([toneColors, toneTextColors], () => {
+    if (!styleTag.value) {
+      styleTag.value = document.createElement('style');
+      styleTag.value.id = 'dynamic-tone-styles';
+      document.head.appendChild(styleTag.value);
+    }
+    styleTag.value.textContent = dynamicDropdownStyles.value;
+  }, { immediate: true, deep: true });
+
+  const isInChat = computed(() => {
+    return !!route.params.chatId;
+  });
+
+  function exitChat() {
+    router.push('/');
+  }
+
+  const showColorsSection = ref(localStorage.getItem('showColorsSection') !== 'false');
+  
+  function toggleColorsSection() {
+    showColorsSection.value = !showColorsSection.value;
+    localStorage.setItem('showColorsSection', showColorsSection.value);
+  }
+
+  function handleMessageKeydown(event) {
+    if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault(); // Prevent newline
+        if (myMessage.value.trim() && !isSending.value) {
+            sendMessage();
+        }
+    }
+  }
+
+  function handleEditKeydown(event) {
+      if (event.key === 'Enter' && !event.shiftKey) {
+          event.preventDefault(); // Prevent newline
+          if (editContent.value.trim() && editingMessage.value && !isSavingEdit.value) {
+              saveEdit(editingMessage.value);
+          }
+      }
+  }
+
   return {
     myMessage,
     messageObjects,
@@ -430,7 +595,23 @@ function homeSetup() {
     selectedToneFilter,
     filteredMessageObjects,
     filteredMessagesCount,
-    messagesContainer
+    messagesContainer,
+    toneColors,
+    toneTextColors,
+    editingTone,
+    editingToneColor,
+    editingToneTextColor,
+    startToneEdit,
+    saveToneColor,
+    cancelToneEdit,
+    resetToDefaults,
+    styleTag,
+    isInChat,
+    exitChat,
+    showColorsSection,
+    toggleColorsSection,
+    handleMessageKeydown,
+    handleEditKeydown
   };
 }
 

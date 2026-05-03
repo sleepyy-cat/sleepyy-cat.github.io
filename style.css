@@ -84,44 +84,21 @@ select {
     font-size: 1rem;
 }
 
-select option[value="Excited"] {
-    background-color: #ffe600;
-    color: #000;
+select option {
+    background-color: inherit;
+    color: inherit;
 }
 
-select option[value="Happy"] {
-    background-color: #00ff08;
-    color: black;
-}
-
-select option[value="Joking"] {
-    background-color: #ff9800;
-    color: white;
-}
-
-select option[value="Neutral"] {
-    background-color: #ffffff;
-    color: black;
-}
-
-select option[value="Sad"] {
-    background-color: #008cff;
-    color: white;
-}
-
-select option[value="Bored"] {
-    background-color: #845646;
-    color: white;
-}
-
-select option[value="Annoyed"] {
-    background-color: #ff3c00;
-    color: white;
-}
-
-select option[value="Mad"] {
-    background-color: #ff0000;
-    color: white;
+select option[value="Excited"],
+select option[value="Happy"],
+select option[value="Joking"],
+select option[value="Neutral"],
+select option[value="Sad"],
+select option[value="Bored"],
+select option[value="Annoyed"],
+select option[value="Mad"],
+select option[value="No tone"] {
+    transition: all 0.2s ease;
 }
 
 select:focus {
@@ -249,6 +226,21 @@ a.router-link-active {
     text-decoration: none;
 }
 
+.colors {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1rem;
+}
+
+.tone-color {
+    display: grid;
+    grid-template-columns: 4.5rem 1.5rem auto;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+
 .tone-indicator {
     display: inline-block;
     padding: 0.1rem 0.4rem;
@@ -257,42 +249,226 @@ a.router-link-active {
     margin-right: 0.4rem;
 }
 
-.tone-excited {
-    background-color: #ffe600;
-    color: #000;
+.tone-indicator {
+    display: inline-block;
+    padding: 0.1rem 0.4rem;
+    border-radius: 0.6rem;
+    margin-left: 0.4rem;
+    margin-right: 0.4rem;
+    transition: background-color 0.2s ease;
 }
 
-.tone-happy {
-    background-color: #00ff08;
-    color: black;
+.tone-excited, .tone-happy, .tone-joking, .tone-neutral, 
+.tone-sad, .tone-bored, .tone-annoyed, .tone-mad, .tone-noTone {
+    display: inline-block;
+    padding: 0.1rem 0.4rem;
+    border-radius: 0.6rem;
+    margin-left: 0.4rem;
+    margin-right: 0.4rem;
 }
 
-.tone-joking {
-    background-color: #ff9800;
-    color: white;
+*::-webkit-scrollbar {
+    width: 0.6rem;
+    height: 0.6rem;
 }
 
-.tone-neutral {
-    background-color: #ffffff;
-    color: black;
+*::-webkit-scrollbar-track {
+    background: var(--color-3);
+    border-radius: 0.2rem;
 }
 
-.tone-sad {
-    background-color: #008cff;
-    color: white;
+*::-webkit-scrollbar-thumb {
+    background: var(--color-1);
+    border-radius: 0.2rem;
 }
 
-.tone-bored {
-    background-color: #845646;
-    color: white;
+*::-webkit-scrollbar-thumb:hover {
+    background: var(--color-4);
 }
 
-.tone-annoyed {
-    background-color: #ff3c00;
-    color: white;
+@media (max-width: 768px) {
+    body {
+        padding: 1rem;
+        font-size: 0.9rem;
+    }
+
+    h1 {
+        font-size: 1.8rem;
+        margin-bottom: 1rem;
+    }
+
+    h2 {
+        font-size: 1.4rem;
+        margin-bottom: 0.75rem;
+    }
+
+    h3 {
+        font-size: 1.2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    button, form input[type="submit"] {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+    }
+
+    input, textarea {
+        padding: 0.75rem;
+        font-size: 0.9rem;
+    }
+
+    textarea {
+        min-width: auto;
+        width: 100%;
+    }
+
+    select {
+        font-size: 0.9rem;
+        height: 2.2rem;
+    }
+
+    form {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    form input[type="submit"], form button {
+        width: 100%;
+        margin-right: 0;
+    }
+
+    p {
+        padding: 1rem;
+        font-size: 0.9rem;
+    }
+
+    a {
+        padding-right: 1rem;
+        font-size: 1rem;
+        display: inline-block;
+        margin-bottom: 0.5rem;
+    }
+
+    .messages-container {
+        height: 15rem;
+    }
+
+    .messages-container li {
+        max-width: 90%;
+        width: 100%;
+    }
+
+    .messages-container li .message-row {
+        grid-template-columns: auto auto 1fr;
+        gap: 0.4rem;
+    }
+
+    .messages-container li button {
+        grid-column: 3;
+        justify-self: start;
+        margin-top: 0.3rem;
+    }
+
+    .messages-container li strong {
+        white-space: normal;
+        word-break: break-word;
+    }
+
+    .colors {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+
+    .tone-color {
+        grid-template-columns: 4rem 1.5rem 1fr;
+        gap: 0.3rem;
+    }
+
+    .tone-search {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .tone-search select {
+        width: 100%;
+    }
+
+    .filter-stats {
+        display: inline-block;
+        margin-top: 0.5rem;
+    }
+
+    .authentication-button {
+        margin-bottom: 0.75rem;
+    }
+
+    .login-container {
+        padding: 0.5rem;
+    }
+
+    .message-row {
+        flex-wrap: wrap;
+    }
+
+    button + form, form + form {
+        margin-top: 0.75rem;
+    }
+
+    a.router-link-active {
+        word-break: break-word;
+    }
+    
+    *::-webkit-scrollbar {
+        display: none;
+    }
 }
 
-.tone-mad {
-    background-color: #ff0000;
-    color: white;
+@media (max-width: 480px) {
+    body {
+        padding: 0.75rem;
+    }
+
+    h1 {
+        font-size: 1.5rem;
+    }
+
+    h2 {
+        font-size: 1.2rem;
+    }
+
+    textarea {
+        max-width: 90%;
+    }
+
+    .messages-container li .message-row {
+        grid-template-columns: 1fr;
+        gap: 0.3rem;
+    }
+
+    .messages-container li tone-indicator {
+        justify-self: start;
+    }
+
+    .messages-container li strong {
+        justify-self: start;
+    }
+
+    .messages-container li .message-text {
+        margin: 0.25rem 0;
+    }
+
+    .tone-color {
+        grid-template-columns: 3.5rem 1.5rem 1fr;
+        font-size: 0.85rem;
+    }
+
+    button, form input[type="submit"] {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+    }
+
+    *::-webkit-scrollbar {
+        display: none;
+    }
 }
