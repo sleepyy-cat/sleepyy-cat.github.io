@@ -36,8 +36,30 @@ function useTonePreferences() {
     noTone: '#000000'
   };
   
-  const toneColors = ref(JSON.parse(localStorage.getItem(STORAGE_KEY + '_bg') || 'null') || defaultColors);
-  const toneTextColors = ref(JSON.parse(localStorage.getItem(STORAGE_KEY + '_text') || 'null') || defaultTextColors);
+  const customTones = ref(JSON.parse(localStorage.getItem(STORAGE_KEY + '_custom') || '{}'));
+  
+  let savedColors = JSON.parse(localStorage.getItem(STORAGE_KEY + '_bg') || 'null');
+  let savedTextColors = JSON.parse(localStorage.getItem(STORAGE_KEY + '_text') || 'null');
+  
+  if (!savedColors) {
+    savedColors = { ...defaultColors };
+  }
+  
+  if (!savedTextColors) {
+    savedTextColors = { ...defaultTextColors };
+  }
+  
+  Object.entries(customTones.value).forEach(([key, tone]) => {
+    if (!savedColors[key]) {
+      savedColors[key] = '#ffffff';
+    }
+    if (!savedTextColors[key]) {
+      savedTextColors[key] = '#000000';
+    }
+  });
+  
+  const toneColors = ref(savedColors);
+  const toneTextColors = ref(savedTextColors);
   
   const updateToneColor = (tone, color, textColor) => {
     toneColors.value = {
@@ -53,21 +75,95 @@ function useTonePreferences() {
   };
   
   const resetToDefaults = () => {
-    toneColors.value = defaultColors;
-    toneTextColors.value = defaultTextColors;
-    localStorage.setItem(STORAGE_KEY + '_bg', JSON.stringify(defaultColors));
-    localStorage.setItem(STORAGE_KEY + '_text', JSON.stringify(defaultTextColors));
+    const newColors = { ...defaultColors };
+    const newTextColors = { ...defaultTextColors };
+    
+    Object.keys(customTones.value).forEach(toneKey => {
+      newColors[toneKey] = '#ffffff';
+      newTextColors[toneKey] = '#000000';
+    });
+    
+    toneColors.value = newColors;
+    toneTextColors.value = newTextColors;
+    localStorage.setItem(STORAGE_KEY + '_bg', JSON.stringify(newColors));
+    localStorage.setItem(STORAGE_KEY + '_text', JSON.stringify(newTextColors));
+  };
+  
+  const addCustomTone = (toneName, bgColor, textColor) => {
+    const toneKey = toneName.toLowerCase().replace(/\s+/g, '_');
+    
+    if (customTones.value[toneKey]) {
+      alert('A tone with this name already exists!');
+      return false;
+    }
+    
+    const newCustomTones = {
+      ...customTones.value,
+      [toneKey]: {
+        name: toneName,
+        bgColor: bgColor,
+        textColor: textColor
+      }
+    };
+    customTones.value = newCustomTones;
+    localStorage.setItem(STORAGE_KEY + '_custom', JSON.stringify(newCustomTones));
+    
+    toneColors.value[toneKey] = bgColor;
+    toneTextColors.value[toneKey] = textColor;
+    localStorage.setItem(STORAGE_KEY + '_bg', JSON.stringify(toneColors.value));
+    localStorage.setItem(STORAGE_KEY + '_text', JSON.stringify(toneTextColors.value));
+    
+    return true;
+  };
+  
+  const deleteCustomTone = (toneKey) => {
+    const newCustomTones = { ...customTones.value };
+    delete newCustomTones[toneKey];
+    customTones.value = newCustomTones;
+    localStorage.setItem(STORAGE_KEY + '_custom', JSON.stringify(newCustomTones));
+    
+    delete toneColors.value[toneKey];
+    delete toneTextColors.value[toneKey];
+    localStorage.setItem(STORAGE_KEY + '_bg', JSON.stringify(toneColors.value));
+    localStorage.setItem(STORAGE_KEY + '_text', JSON.stringify(toneTextColors.value));
+  };
+  
+  const getAllTones = () => {
+    const standardTones = [
+      { key: 'excited', name: 'Excited', isCustom: false },
+      { key: 'happy', name: 'Happy', isCustom: false },
+      { key: 'joking', name: 'Joking', isCustom: false },
+      { key: 'neutral', name: 'Neutral', isCustom: false },
+      { key: 'sad', name: 'Sad', isCustom: false },
+      { key: 'bored', name: 'Bored', isCustom: false },
+      { key: 'annoyed', name: 'Annoyed', isCustom: false },
+      { key: 'mad', name: 'Mad', isCustom: false },
+      { key: 'noTone', name: 'No tone', isCustom: false }
+    ];
+    
+    const customTonesList = Object.entries(customTones.value).map(([key, value]) => ({
+      key: key,
+      name: value.name,
+      isCustom: true,
+      bgColor: value.bgColor,
+      textColor: value.textColor
+    }));
+    
+    return [...standardTones, ...customTonesList];
   };
   
   return {
     toneColors,
     toneTextColors,
     updateToneColor,
-    resetToDefaults
+    resetToDefaults,
+    addCustomTone,
+    deleteCustomTone,
+    getAllTones,
+    customTones
   };
 }
 
-// Update ToneIndicator component:
 const ToneIndicator = {
     template: "#tone-indicator-template",
     props: {
@@ -89,12 +185,12 @@ const ToneIndicator = {
         });
         
         const getToneColor = computed(() => {
-            const toneKey = props.tone ? props.tone.toLowerCase() : 'noTone';
+            const toneKey = props.tone ? props.tone.toLowerCase().replace(/\s+/g, '_') : 'noTone';
             return toneColors.value[toneKey] || toneColors.value.noTone;
         });
         
         const getToneTextColor = computed(() => {
-            const toneKey = props.tone ? props.tone.toLowerCase() : 'noTone';
+            const toneKey = props.tone ? props.tone.toLowerCase().replace(/\s+/g, '_') : 'noTone';
             return toneTextColors.value[toneKey] || toneTextColors.value.noTone;
         });
         
@@ -473,10 +569,51 @@ function homeSetup() {
     editChatTitle.value = "";
   }
 
-  const { toneColors, toneTextColors, updateToneColor, resetToDefaults } = useTonePreferences();
+  const { 
+    toneColors, 
+    toneTextColors, 
+    updateToneColor, 
+    resetToDefaults,
+    addCustomTone,
+    deleteCustomTone,
+    getAllTones
+  } = useTonePreferences();
+  
   const editingTone = ref(null);
   const editingToneColor = ref("");
   const editingToneTextColor = ref("");
+  
+  const showCustomTonesForm = ref(false);
+  const newCustomToneName = ref("");
+  const newCustomToneBgColor = ref("#ffffff");
+  const newCustomToneTextColor = ref("#000000");
+  const deletingCustomTone = ref(null);
+  
+  function addNewCustomTone() {
+    if (!newCustomToneName.value.trim()) return;
+    
+    addCustomTone(
+      newCustomToneName.value.trim(),
+      newCustomToneBgColor.value,
+      newCustomToneTextColor.value
+    );
+    
+    newCustomToneName.value = "";
+    newCustomToneBgColor.value = "#ffffff";
+    newCustomToneTextColor.value = "#000000";
+    showCustomTonesForm.value = false;
+  }
+  
+  async function handleDeleteCustomTone(toneKey) {
+    if (!confirm("Are you sure you want to delete this custom tone?")) return;
+    
+    deletingCustomTone.value = toneKey;
+    try {
+      deleteCustomTone(toneKey);
+    } finally {
+      deletingCustomTone.value = null;
+    }
+  }
   
   function startToneEdit(tone) {
     editingTone.value = tone;
@@ -499,22 +636,31 @@ function homeSetup() {
     editingToneTextColor.value = "";
   }
 
+  const toneOptions = computed(() => {
+    return getAllTones().map(tone => tone.name);
+  });
+
   const dynamicDropdownStyles = computed(() => {
-  let styles = '';
-  for (const [tone, color] of Object.entries(toneColors.value)) {
-    const toneName = tone === 'noTone' ? 'No tone' : tone.charAt(0).toUpperCase() + tone.slice(1);
-    const textColor = toneTextColors.value[tone];
-    styles += `
-      select option[value="${toneName}"],
-      select option[value="${tone === 'noTone' ? 'No tone' : toneName}"],
-      .tone-${tone} {
-        background-color: ${color} !important;
-        color: ${textColor} !important;
+    let styles = '';
+    const allTones = getAllTones();
+    
+    allTones.forEach(tone => {
+      const toneName = tone.name;
+      const bgColor = toneColors.value[tone.key];
+      const textColor = toneTextColors.value[tone.key];
+      
+      if (bgColor && textColor) {
+        styles += `
+          select option[value="${toneName}"],
+          .tone-${tone.key} {
+            background-color: ${bgColor} !important;
+            color: ${textColor} !important;
+          }
+        `;
       }
-    `;
-  }
-  return styles;
-});
+    });
+    return styles;
+  });
 
   const styleTag = ref(null);
   watch([toneColors, toneTextColors], () => {
@@ -541,6 +687,13 @@ function homeSetup() {
     localStorage.setItem('showColorsSection', showColorsSection.value);
   }
 
+  const showTonesSection = ref(localStorage.getItem('showTonesSection') !== 'false');
+  
+  function toggleTonesSection() {
+    showTonesSection.value = !showTonesSection.value;
+    localStorage.setItem('showTonesSection', showTonesSection.value);
+  }
+
   function handleMessageKeydown(event) {
     if (event.key === 'Enter' && !event.shiftKey) {
         event.preventDefault(); // Prevent newline
@@ -558,6 +711,11 @@ function homeSetup() {
           }
       }
   }
+
+  const getMessageToneColor = (message) => {
+    const toneKey = message.value.tone ? message.value.tone.toLowerCase().replace(/\s+/g, '_') : 'noTone';
+    return toneColors.value[toneKey] || toneColors.value.noTone;
+  };
 
   return {
     myMessage,
@@ -610,8 +768,20 @@ function homeSetup() {
     exitChat,
     showColorsSection,
     toggleColorsSection,
+    showTonesSection,
+    toggleTonesSection,
     handleMessageKeydown,
-    handleEditKeydown
+    handleEditKeydown,
+    getMessageToneColor,
+    showCustomTonesForm,
+    newCustomToneName,
+    newCustomToneBgColor,
+    newCustomToneTextColor,
+    addNewCustomTone,
+    deleteCustomTone: handleDeleteCustomTone,
+    deletingCustomTone,
+    getAllTones,
+    toneOptions
   };
 }
 

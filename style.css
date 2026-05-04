@@ -232,6 +232,25 @@ a.router-link-active {
     gap: 1rem;
 }
 
+.custom-tone-form {
+    margin-top: 1rem;
+    padding: 1rem;
+    border-radius: 0.5rem;
+}
+
+.add-custom-tone-btn {
+    margin-top: 1rem;
+}
+
+.tone-color-item {
+    margin-bottom: 1rem;
+    padding: 0.5rem;
+}
+
+.delete-custom-tone-btn {
+    margin-top: 0.5rem;
+}
+
 .tone-color {
     display: grid;
     grid-template-columns: 4.5rem 1.5rem auto;
@@ -284,6 +303,16 @@ a.router-link-active {
 
 *::-webkit-scrollbar-thumb:hover {
     background: var(--color-4);
+}
+
+@keyframes messagePulse {
+    0% { background-color: var(--tone-color); }
+    50% { background-color: var(--tone-color);; }
+    100% { background-color: var(--tone-color); }
+}
+
+.messages-container li:last-child {
+    animation: messagePulse 0.5s ease-out;
 }
 
 @media (max-width: 768px) {
