@@ -35,15 +35,7 @@
 
         <template id="home-template">
             <div>
-                <button v-if="!$graffitiSession.value" @click="$graffiti.login()">
-                    Log In
-                </button>
-                <template v-else>
-                    <button @click="$graffiti.logout($graffitiSession.value)">
-                        Log Out
-                    </button>
-                </template>
-                <div v-if="!isInChat" class="chat-list-container">
+                <div v-if="!isInChat && $graffitiSession.value">
                     <h2>Chats</h2>
                     <p v-if="chats.length === 0 && !areChatsLoading">
                         <em>No chats yet. Create one!</em>
@@ -61,11 +53,16 @@
                     <p v-else class="login-required-message">
                         Please <router-link to="/login">log in</router-link> to create new chats
                     </p>
-                    <ul v-if="chats.length > 0">
+                    <ul v-if="chats.length > 0" class="chats-container" ref="chatsContainer">
                         <li v-for="chat in sortedChats" :key="chat.url">
                             <router-link :to="`/chat/${chat.value.channel}`" @click="selectChat(chat)">
                                 {{ chat.value.title }}
                             </router-link>
+                            <span v-if="isMessageCountLoaded(chat.value.channel)" class="message-count">
+                                ({{ getMessageCount(chat.value.channel) }} message{{ getMessageCount(chat.value.channel) !== 1 ? 's' : '' }})
+                            </span>
+                            <span v-else-if="isMessageCountLoading(chat.value.channel)" class="message-count-loading">(loading...)</span>
+                            <span v-else class="message-count-loading">(loading...)</span>
                             <button 
                                 v-if="chat.actor===$graffitiSession.value?.actor && $graffitiSession.value"
                                 @click="startChatEdit(chat)"
@@ -102,7 +99,7 @@
                         </li>
                     </ul>
                 </div>
-                <div v-else style="margin-top: 1rem;">
+                <div v-if="isInChat && $graffitiSession.value">
                     <router-link to="/">
                         Return to Chats List
                     </router-link>
@@ -135,7 +132,7 @@
                                     <graffiti-actor-to-handle :actor="object.actor">
                                     </graffiti-actor-to-handle>:
                                 </strong>
-                                <span class="message-text">{{ object.value.content }}</span>
+                                <span class="message-text" v-html="formatMessageWithLinks(object.value.content)"></span>
                                 <p v-show="isDeleting.has(object.url)">Deleting message...</p> 
                                 <button
                                     v-if="object.actor===$graffitiSession.value?.actor && editingMessage?.url !== object.url"
@@ -211,7 +208,6 @@
                                     border: '1px solid #ffffff', borderRadius: '0.2rem' }"
                                     @click="startToneEdit(toneName)"
                                 ></div>
-                                <span>{{ color }}</span>
                             </div>
                             <form v-if="editingTone === toneName" @submit.prevent="saveToneColor">
                                 <label>Background:</label>

@@ -255,6 +255,113 @@ function homeSetup() {
       return a.value.published - b.value.published;
     });
   });
+  
+  const chatMessageCounts = ref(new Map());
+  const chatCountsLoading = ref(new Set());
+  const chatCountsLoaded = ref(new Set());
+
+  async function fetchMessageCountForChat(chatChannel) {
+    if (!chatChannel) return 0;
+    
+    if (chatCountsLoading.value.has(chatChannel) || chatCountsLoaded.value.has(chatChannel)) {
+      return chatMessageCounts.value.get(chatChannel) || 0;
+    }
+    
+    chatCountsLoading.value.add(chatChannel);
+    
+    return new Promise((resolve) => {
+      const { objects: messages, isFirstPoll } = useGraffitiDiscover(
+        [chatChannel],
+        {
+          properties: {
+            value: {
+              required: ["content", "published"],
+              properties: {
+                content: { type: "string" },
+                published: { type: "number" },
+              },
+            },
+          },
+        },
+        undefined,
+        false
+      );
+      
+      const timeoutId = setTimeout(() => {
+        const count = messages.value.length;
+        chatMessageCounts.value.set(chatChannel, count);
+        chatCountsLoading.value.delete(chatChannel);
+        chatCountsLoaded.value.add(chatChannel);
+        resolve(count);
+      }, 500);
+      
+      const stopWatch = watch([messages, isFirstPoll], () => {
+        if (!isFirstPoll.value) {
+          clearTimeout(timeoutId);
+          const count = messages.value.length;
+          chatMessageCounts.value.set(chatChannel, count);
+          chatCountsLoading.value.delete(chatChannel);
+          chatCountsLoaded.value.add(chatChannel);
+          stopWatch();
+          resolve(count);
+        }
+      });
+    });
+  }
+
+  async function updateAllChatMessageCounts() {
+    if (!chats.value.length) return;
+    
+    const chatsToLoad = chats.value.filter(chat => 
+      !chatCountsLoaded.value.has(chat.value.channel) && 
+      !chatCountsLoading.value.has(chat.value.channel)
+    );
+    
+    if (chatsToLoad.length === 0) return;
+    
+    const promises = chatsToLoad.map(chat => 
+      fetchMessageCountForChat(chat.value.channel)
+    );
+    
+    await Promise.all(promises);
+  }
+
+  let initialChatsLoaded = false;
+  watch(() => chats.value, (newChats, oldChats) => {
+    if (newChats.length > 0 && !initialChatsLoaded) {
+      initialChatsLoaded = true;
+      updateAllChatMessageCounts();
+    } else if (newChats.length !== oldChats?.length && initialChatsLoaded) {
+      const newChatsOnly = newChats.filter(chat => 
+        !chatCountsLoaded.value.has(chat.value.channel) && 
+        !chatCountsLoading.value.has(chat.value.channel)
+      );
+      if (newChatsOnly.length > 0) {
+        newChatsOnly.forEach(chat => {
+          fetchMessageCountForChat(chat.value.channel);
+        });
+      }
+    }
+  }, { immediate: true });
+
+  watch(() => route.path, (newPath, oldPath) => {
+    if (newPath === '/' && oldPath && oldPath.includes('/chat/')) {
+      updateAllChatMessageCounts();
+    }
+  });
+
+  function getMessageCount(chatChannel) {
+    const count = chatMessageCounts.value.get(chatChannel);
+    return count !== undefined ? count : null;
+  }
+
+  function isMessageCountLoading(chatChannel) {
+    return chatCountsLoading.value.has(chatChannel);
+  }
+
+  function isMessageCountLoaded(chatChannel) {
+    return chatCountsLoaded.value.has(chatChannel);
+  }
 
   function selectChat(chat) {
     channel.value = chat.value.channel;
@@ -357,6 +464,49 @@ function homeSetup() {
   watch(filteredMessagesCount, () => {
     shouldAutoScroll.value = true;
     scrollToBottom();
+  });
+
+  const chatsContainer = ref(null);
+  const shouldAutoScrollChats = ref(true);
+
+  const handleChatsScroll = () => {
+    if (!chatsContainer.value) return;
+    const container = chatsContainer.value;
+    const isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 10;
+    if (isAtBottom) {
+      shouldAutoScrollChats.value = true;
+    } else {
+      shouldAutoScrollChats.value = false;
+    }
+  };
+
+  const scrollChatsToBottom = () => {
+    if (shouldAutoScrollChats.value && chatsContainer.value) {
+      setTimeout(() => {
+        if (chatsContainer.value && shouldAutoScrollChats.value) {
+          chatsContainer.value.scrollTop = chatsContainer.value.scrollHeight;
+        }
+      }, 0);
+    }
+  };
+
+  watch(chatsContainer, (container) => {
+    if (container) {
+      container.addEventListener('scroll', handleChatsScroll);
+      shouldAutoScrollChats.value = true;
+      scrollChatsToBottom();
+    }
+    return () => {
+      if (container) {
+        container.removeEventListener('scroll', handleChatsScroll);
+      }
+    };
+  });
+
+  watch(sortedChats, (newChats, oldChats) => {
+    if (newChats.length !== oldChats?.length) {
+      scrollChatsToBottom();
+    }
   });
 
   // A function to send a message.
@@ -717,6 +867,20 @@ function homeSetup() {
     return toneColors.value[toneKey] || toneColors.value.noTone;
   };
 
+  function formatMessageWithLinks(content) {
+    if (!content) return '';
+    
+    const urlPattern = /(\b(https?:\/\/|www\.)[^\s<]+[^\s<.,?!;:()'"])/gi;
+    
+    return content.replace(urlPattern, (url) => {
+      let href = url;
+      if (url.startsWith('www.')) {
+        href = 'https://' + url;
+      }
+      return `<a href="${href}" target="_blank" rel="noopener noreferrer" class="message-link">${url}</a>`;
+    });
+  }
+
   return {
     myMessage,
     messageObjects,
@@ -754,6 +918,7 @@ function homeSetup() {
     filteredMessageObjects,
     filteredMessagesCount,
     messagesContainer,
+    chatsContainer,
     toneColors,
     toneTextColors,
     editingTone,
@@ -781,7 +946,12 @@ function homeSetup() {
     deleteCustomTone: handleDeleteCustomTone,
     deletingCustomTone,
     getAllTones,
-    toneOptions
+    toneOptions,
+    formatMessageWithLinks,
+    chatMessageCounts,
+    getMessageCount,
+    isMessageCountLoading,
+    isMessageCountLoaded
   };
 }
 

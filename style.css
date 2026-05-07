@@ -157,6 +157,16 @@ ul, li {
     padding-left: 0;
 }
 
+.chats-container {
+    height: 20rem;
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    margin: 0.5rem 0;
+    padding: 0.5rem;
+}
+
 .messages-container {
     height: 20rem;
     overflow-y: auto;
