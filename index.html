@@ -29,6 +29,9 @@
                 <router-link to="/login" class="authentication-button">
                     <button>Login / Logout</button>
                 </router-link>
+                <router-link to="/customize" class="customize-button">
+                    <button>Customize Tone Info</button>
+                </router-link>
                 <router-view></router-view>
             </div>
         </template>
@@ -109,10 +112,10 @@
                     <h3>Current chat: {{ currentChatTitle }}</h3>
                     <div class="tone-search">
                         <label>Filter by tone: </label>
-                        <select v-model="selectedToneFilter">
+                        <select v-model="selectedToneFilter" :title="selectedToneFilter && selectedToneFilter.length > 30 ? selectedToneFilter : ''">
                             <option value="">All tones</option>
-                            <option v-for="tone in toneOptions" :key="tone" :value="tone" v-if="tone !== 'No tone'">
-                                {{ tone }}
+                            <option v-for="tone in toneOptionsWithTooltips" :key="tone.fullName" :value="tone.fullName" :title="tone.fullName.length > 30 ? tone.fullName : ''">
+                                {{ tone.truncatedName }}
                             </option>
                         </select>
                         <span v-if="filteredMessagesCount !== sortedMessageObjects.length && sortedMessageObjects.length > 0" class="filter-stats">
@@ -155,9 +158,9 @@
                                     placeholder="Edit message"
                                     @keydown="handleEditKeydown"
                                 ></textarea>
-                                <select v-model="editTone">
-                                    <option v-for="tone in toneOptions" :key="tone" :value="tone" v-if="tone !== 'No tone'">
-                                        {{ tone }}
+                                <select v-model="editTone" :title="editTone && editTone.length > 30 ? editTone : ''">
+                                    <option v-for="tone in toneOptionsWithTooltips" :key="tone.fullName" :value="tone.fullName" :title="tone.fullName.length > 30 ? tone.fullName : ''">
+                                        {{ tone.truncatedName }}
                                     </option>
                                 </select>
                                 <button @click="saveEdit(object)" :disabled="isSavingEdit || isDeleting.has(object.url)">
@@ -176,10 +179,10 @@
                             placeholder="Message"
                             @keydown="handleMessageKeydown"
                         ></textarea>
-                        <select v-model="selectedTone">
+                        <select v-model="selectedTone" :title="selectedTone && selectedTone.length > 30 ? selectedTone : ''">
                             <option value="">Select tone</option>
-                            <option v-for="tone in toneOptions" :key="tone" :value="tone" v-if="tone !== 'No tone'">
-                                {{ tone }}
+                            <option v-for="tone in toneOptionsWithTooltips" :key="tone.fullName" :value="tone.fullName" :title="tone.fullName.length > 30 ? tone.fullName : ''">
+                                {{ tone.truncatedName }}
                             </option>
                         </select>
                         <input
@@ -193,21 +196,58 @@
                         <p>Please <router-link to="/login">log in</router-link> to send messages</p>
                     </div>
                 </div>
-                <button v-if="$graffitiSession.value" @click="toggleColorsSection" class="toggle-colors-btn" style="margin-top: 1rem;">
+            </div>
+        </template>
+
+        <template id="login-template">
+            <div class="login-container">
+                <h2>Authentication</h2>
+                <div v-if="$graffitiSession.value" class="logged-in-state">
+                    <p>You are currently logged in as: 
+                        <strong>
+                            <graffiti-actor-to-handle :actor="$graffitiSession.value.actor">
+                            </graffiti-actor-to-handle>
+                        </strong>
+                    </p>
+                    <button @click="handleLogout" class="logout-button">
+                        Log Out
+                    </button>
+                </div>
+                <div v-else class="logged-out-state">
+                    <p>You are not logged in. Please log in to continue.</p>
+                    <button @click="handleLogin" class="login-button">
+                        Log In
+                    </button>
+                </div>
+            </div>
+        </template>
+
+        <template id="customize-template">
+            <div>
+                <router-link to="/">
+                    Return to Chats List
+                </router-link>
+            </div>
+            <div>
+                <button @click="toggleColorsSection" class="toggle-colors-btn" style="margin-top: 1rem;">
                     {{ showColorsSection ? 'Hide' : 'Show' }} Color Editing Section
                 </button>
-                <div v-show="showColorsSection && $graffitiSession.value">
+                <div v-show="showColorsSection">
                     <h2>Customize Tone Colors</h2>
                     <h3>These colors only appear for you</h3>
                     <div class="colors">
                         <div v-for="(color, toneName) in toneColors" :key="toneName">
                             <div class="tone-color">
-                                <span style="text-transform: capitalize;">{{ toneName === 'noTone' ? 'No tone' : toneName }}:</span>
+                                <span :title="getFullToneName(toneName) && getFullToneName(toneName).length > 30 ? getFullToneName(toneName) : ''" style="text-transform: capitalize;">
+                                    {{ truncateToneName(getFullToneName(toneName) || (toneName === 'noTone' ? 'No tone' : toneName)) }}
+                                </span>
                                 <div
                                     :style="{ backgroundColor: color, width: '1.5rem', height: '1.5rem', 
-                                    border: '1px solid #ffffff', borderRadius: '0.2rem' }"
+                                    border: '1px solid #ffffff', borderRadius: '0.2rem', 
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    color: toneTextColors[toneName] || '#000000', fontSize: '0.8rem', fontWeight: 'bold' }"
                                     @click="startToneEdit(toneName)"
-                                ></div>
+                                >T</div>
                             </div>
                             <form v-if="editingTone === toneName" @submit.prevent="saveToneColor">
                                 <label>Background:</label>
@@ -244,27 +284,33 @@
                     </div>
                     <button @click="resetToDefaults">Reset to Default Colors</button>
                 </div>
-                <button v-if="$graffitiSession.value" @click="toggleTonesSection" class="toggle-tones-btn" style="margin-top: 1rem;">
+                
+                <button @click="toggleTonesSection" class="toggle-tones-btn" style="margin-top: 1rem;">
                     {{ showTonesSection ? 'Hide' : 'Show' }} Tone Editing Section
                 </button>
-                <div v-show="showTonesSection && $graffitiSession.value">
+                <div v-show="showTonesSection">
                     <h2>Your Custom Tones</h2>
                     <h3>These tones appear for everyone, but the colors only appear for you</h3>
                     <div v-if="getAllTones().some(t => t.isCustom)" class="custom-tones-list">
                         <div v-for="tone in getAllTones().filter(t => t.isCustom)" :key="tone.key" class="tone-color-item">
                             <div class="tone-color">
-                                <span style="text-transform: capitalize;">{{ tone.name }}:</span>
+                                <span :title="tone.name.length > 30 ? tone.name : ''" style="text-transform: capitalize;">{{ tone.name.length > 30? truncateToneName(tone.name) : tone.name }}:</span>
                                 <div
                                     :style="{ 
                                         backgroundColor: toneColors[tone.key], 
                                         width: '1.5rem', 
                                         height: '1.5rem', 
                                         border: '1px solid #ffffff', 
-                                        borderRadius: '0.2rem' 
+                                        borderRadius: '0.2rem',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        color: toneTextColors[tone.key] || '#000000',
+                                        fontSize: '0.8rem',
+                                        fontWeight: 'bold'
                                     }"
                                     @click="startToneEdit(tone.key)"
-                                ></div>
-                                <span>{{ toneColors[tone.key] }}</span>
+                                >T</div>
                             </div>
                             <button 
                                 @click="deleteCustomTone(tone.key)"
@@ -311,7 +357,7 @@
                                     padding: '0 10px'
                                 }"
                             >
-                                {{ newCustomToneName || 'Sample Text' }}
+                                {{ 'Sample Text' }}
                             </div>
                             <button type="submit" :disabled="!newCustomToneName.trim()">
                                 Add Custom Tone
@@ -330,36 +376,13 @@
             </div>
         </template>
 
-        <template id="login-template">
-            <div class="login-container">
-                <h2>Authentication</h2>
-                <div v-if="$graffitiSession.value" class="logged-in-state">
-                    <p>You are currently logged in as: 
-                        <strong>
-                            <graffiti-actor-to-handle :actor="$graffitiSession.value.actor">
-                            </graffiti-actor-to-handle>
-                        </strong>
-                    </p>
-                    <button @click="handleLogout" class="logout-button">
-                        Log Out
-                    </button>
-                </div>
-                <div v-else class="logged-out-state">
-                    <p>You are not logged in. Please log in to continue.</p>
-                    <button @click="handleLogin" class="login-button">
-                        Log In
-                    </button>
-                </div>
-            </div>
-        </template>
-
         <template id="tone-indicator-template">
             <span 
                 :class="['tone-indicator', toneClass]" 
                 :title="toneText"
                 :style="{ backgroundColor: getToneColor, color: getToneTextColor }"
             >
-                {{ toneText }}
+                {{ truncatedToneText }}
             </span>
         </template>
     </body>

@@ -9,6 +9,19 @@ import {
   useGraffitiDiscover,
 } from "@graffiti-garden/wrapper-vue";
 
+const tonePreferencesStore = {
+  colors: ref({}),
+  textColors: ref({}),
+  
+  updateColors(newColors) {
+    this.colors.value = newColors;
+  },
+  
+  updateTextColors(newTextColors) {
+    this.textColors.value = newTextColors;
+  }
+};
+
 function useTonePreferences() {
   const STORAGE_KEY = 'tone-preferences';
   
@@ -61,6 +74,9 @@ function useTonePreferences() {
   const toneColors = ref(savedColors);
   const toneTextColors = ref(savedTextColors);
   
+  tonePreferencesStore.updateColors(toneColors.value);
+  tonePreferencesStore.updateTextColors(toneTextColors.value);
+  
   const updateToneColor = (tone, color, textColor) => {
     toneColors.value = {
       ...toneColors.value,
@@ -72,6 +88,9 @@ function useTonePreferences() {
     };
     localStorage.setItem(STORAGE_KEY + '_bg', JSON.stringify(toneColors.value));
     localStorage.setItem(STORAGE_KEY + '_text', JSON.stringify(toneTextColors.value));
+    
+    tonePreferencesStore.updateColors(toneColors.value);
+    tonePreferencesStore.updateTextColors(toneTextColors.value);
   };
   
   const resetToDefaults = () => {
@@ -87,6 +106,9 @@ function useTonePreferences() {
     toneTextColors.value = newTextColors;
     localStorage.setItem(STORAGE_KEY + '_bg', JSON.stringify(newColors));
     localStorage.setItem(STORAGE_KEY + '_text', JSON.stringify(newTextColors));
+    
+    tonePreferencesStore.updateColors(toneColors.value);
+    tonePreferencesStore.updateTextColors(toneTextColors.value);
   };
   
   const addCustomTone = (toneName, bgColor, textColor) => {
@@ -113,6 +135,9 @@ function useTonePreferences() {
     localStorage.setItem(STORAGE_KEY + '_bg', JSON.stringify(toneColors.value));
     localStorage.setItem(STORAGE_KEY + '_text', JSON.stringify(toneTextColors.value));
     
+    tonePreferencesStore.updateColors(toneColors.value);
+    tonePreferencesStore.updateTextColors(toneTextColors.value);
+    
     return true;
   };
   
@@ -126,6 +151,10 @@ function useTonePreferences() {
     delete toneTextColors.value[toneKey];
     localStorage.setItem(STORAGE_KEY + '_bg', JSON.stringify(toneColors.value));
     localStorage.setItem(STORAGE_KEY + '_text', JSON.stringify(toneTextColors.value));
+    
+    // Update the store
+    tonePreferencesStore.updateColors(toneColors.value);
+    tonePreferencesStore.updateTextColors(toneTextColors.value);
   };
   
   const getAllTones = () => {
@@ -165,42 +194,46 @@ function useTonePreferences() {
 }
 
 const ToneIndicator = {
-    template: "#tone-indicator-template",
-    props: {
-        tone: {
-            type: String,
-            default: ""
-        }
-    },
-    setup(props) {
-        const { toneColors, toneTextColors } = useTonePreferences();
-        
-        const toneText = computed(() => {
-            return props.tone && props.tone !== "" ? props.tone : "No tone";
-        });
-        
-        const toneClass = computed(() => {
-            if (!props.tone || props.tone === "") return "tone-noTone";
-            return `tone-${props.tone.toLowerCase()}`;
-        });
-        
-        const getToneColor = computed(() => {
-            const toneKey = props.tone ? props.tone.toLowerCase().replace(/\s+/g, '_') : 'noTone';
-            return toneColors.value[toneKey] || toneColors.value.noTone;
-        });
-        
-        const getToneTextColor = computed(() => {
-            const toneKey = props.tone ? props.tone.toLowerCase().replace(/\s+/g, '_') : 'noTone';
-            return toneTextColors.value[toneKey] || toneTextColors.value.noTone;
-        });
-        
-        return { 
-            toneText,
-            toneClass,
-            getToneColor,
-            getToneTextColor
-        };
+  template: "#tone-indicator-template",
+  props: {
+    tone: {
+        type: String,
+        default: ""
     }
+  },
+  setup(props) {
+    const toneColorValue = computed(() => {
+      const toneKey = props.tone ? props.tone.toLowerCase().replace(/\s+/g, '_') : 'noTone';
+      return tonePreferencesStore.colors.value[toneKey] || tonePreferencesStore.colors.value.noTone;
+    });
+    
+    const toneTextColorValue = computed(() => {
+      const toneKey = props.tone ? props.tone.toLowerCase().replace(/\s+/g, '_') : 'noTone';
+      return tonePreferencesStore.textColors.value[toneKey] || tonePreferencesStore.textColors.value.noTone;
+    });
+    
+    const toneText = computed(() => {
+      return props.tone && props.tone !== "" ? props.tone : "No tone";
+    });
+    
+    const truncatedToneText = computed(() => {
+      const text = toneText.value;
+      return text.length > 30 ? text.substring(0, 27) + "..." : text;
+    });
+    
+    const toneClass = computed(() => {
+      if (!props.tone || props.tone === "") return "tone-noTone";
+      return `tone-${props.tone.toLowerCase()}`;
+    });
+    
+    return { 
+        toneText,
+        truncatedToneText,
+        toneClass,
+        getToneColor: toneColorValue,
+        getToneTextColor: toneTextColorValue
+    };
+  }
 };
 
 function homeSetup() {
@@ -786,8 +819,20 @@ function homeSetup() {
     editingToneTextColor.value = "";
   }
 
+  const truncateToneName = (name) => {
+    return name.length > 30 ? name.substring(0, 27) + "..." : name;
+  };
+
   const toneOptions = computed(() => {
     return getAllTones().map(tone => tone.name);
+  });
+
+  const toneOptionsWithTooltips = computed(() => {
+    return getAllTones().map(tone => ({
+      name: tone.name,
+      truncatedName: truncateToneName(tone.name),
+      fullName: tone.name
+    }));
   });
 
   const dynamicDropdownStyles = computed(() => {
@@ -796,24 +841,27 @@ function homeSetup() {
     
     allTones.forEach(tone => {
       const toneName = tone.name;
+      const escapedToneName = toneName.replace(/([!"#$%&'()*+,./:;<=>?@[\\\]^`{|}~])/g, '\\$1');
       const bgColor = toneColors.value[tone.key];
       const textColor = toneTextColors.value[tone.key];
       
       if (bgColor && textColor) {
         styles += `
-          select option[value="${toneName}"],
-          .tone-${tone.key} {
+          select option[value="${escapedToneName}"],
+          select option[value="${escapedToneName}"]:hover,
+          select option[value="${escapedToneName}"]:checked {
             background-color: ${bgColor} !important;
             color: ${textColor} !important;
           }
         `;
       }
     });
+    
     return styles;
   });
 
   const styleTag = ref(null);
-  watch([toneColors, toneTextColors], () => {
+  watch([toneColors, toneTextColors, getAllTones], () => {
     if (!styleTag.value) {
       styleTag.value = document.createElement('style');
       styleTag.value.id = 'dynamic-tone-styles';
@@ -880,6 +928,12 @@ function homeSetup() {
       return `<a href="${href}" target="_blank" rel="noopener noreferrer" class="message-link">${url}</a>`;
     });
   }
+
+  const getFullToneName = (toneKey) => {
+    const allTones = getAllTones();
+    const found = allTones.find(t => t.key === toneKey);
+    return found ? found.name : null;
+  };
 
   return {
     myMessage,
@@ -951,7 +1005,10 @@ function homeSetup() {
     chatMessageCounts,
     getMessageCount,
     isMessageCountLoading,
-    isMessageCountLoaded
+    isMessageCountLoaded,
+    toneOptionsWithTooltips,
+    truncateToneName,
+    getFullToneName
   };
 }
 
@@ -978,12 +1035,134 @@ function loginSetup() {
   };
 }
 
+function customizeSetup() {
+  const session = useGraffitiSession();
+  
+  const { 
+    toneColors, 
+    toneTextColors, 
+    updateToneColor, 
+    resetToDefaults,
+    addCustomTone,
+    deleteCustomTone,
+    getAllTones
+  } = useTonePreferences();
+  
+  const editingTone = ref(null);
+  const editingToneColor = ref("");
+  const editingToneTextColor = ref("");
+  
+  const showCustomTonesForm = ref(false);
+  const newCustomToneName = ref("");
+  const newCustomToneBgColor = ref("#ffffff");
+  const newCustomToneTextColor = ref("#000000");
+  const deletingCustomTone = ref(null);
+  
+  const showColorsSection = ref(localStorage.getItem('showColorsSection_customize') !== 'false');
+  const showTonesSection = ref(localStorage.getItem('showTonesSection_customize') !== 'false');
+  
+  function toggleColorsSection() {
+    showColorsSection.value = !showColorsSection.value;
+    localStorage.setItem('showColorsSection_customize', showColorsSection.value);
+  }
+  
+  function toggleTonesSection() {
+    showTonesSection.value = !showTonesSection.value;
+    localStorage.setItem('showTonesSection_customize', showTonesSection.value);
+  }
+  
+  function addNewCustomTone() {
+    if (!newCustomToneName.value.trim()) return;
+    
+    addCustomTone(
+      newCustomToneName.value.trim(),
+      newCustomToneBgColor.value,
+      newCustomToneTextColor.value
+    );
+    
+    newCustomToneName.value = "";
+    newCustomToneBgColor.value = "#ffffff";
+    newCustomToneTextColor.value = "#000000";
+    showCustomTonesForm.value = false;
+  }
+  
+  async function handleDeleteCustomTone(toneKey) {
+    if (!confirm("Are you sure you want to delete this custom tone?")) return;
+    
+    deletingCustomTone.value = toneKey;
+    try {
+      deleteCustomTone(toneKey);
+    } finally {
+      deletingCustomTone.value = null;
+    }
+  }
+  
+  function startToneEdit(tone) {
+    editingTone.value = tone;
+    editingToneColor.value = toneColors.value[tone] || toneColors.value.noTone;
+    editingToneTextColor.value = toneTextColors.value[tone] || toneTextColors.value.noTone;
+  }
+  
+  function saveToneColor() {
+    if (editingTone.value && editingToneColor.value) {
+      updateToneColor(editingTone.value, editingToneColor.value, editingToneTextColor.value);
+      editingTone.value = null;
+      editingToneColor.value = "";
+      editingToneTextColor.value = "";
+    }
+  }
+  
+  function cancelToneEdit() {
+    editingTone.value = null;
+    editingToneColor.value = "";
+    editingToneTextColor.value = "";
+  }
+  
+  const truncateToneName = (name) => {
+    return name.length > 30 ? name.substring(0, 27) + "..." : name;
+  };
+  
+  const getFullToneName = (toneKey) => {
+    const allTones = getAllTones();
+    const found = allTones.find(t => t.key === toneKey);
+    return found ? found.name : null;
+  };
+  
+  return {
+    session,
+    toneColors,
+    toneTextColors,
+    editingTone,
+    editingToneColor,
+    editingToneTextColor,
+    startToneEdit,
+    saveToneColor,
+    cancelToneEdit,
+    resetToDefaults,
+    showColorsSection,
+    toggleColorsSection,
+    showTonesSection,
+    toggleTonesSection,
+    showCustomTonesForm,
+    newCustomToneName,
+    newCustomToneBgColor,
+    newCustomToneTextColor,
+    addNewCustomTone,
+    deleteCustomTone: handleDeleteCustomTone,
+    deletingCustomTone,
+    getAllTones,
+    truncateToneName,
+    getFullToneName
+  };
+}
+
 const router = createRouter({
   history: createWebHashHistory(),
   routes: [
     { path: "/", component: { template: "#home-template", setup: homeSetup }, name: "home" },
     { path: "/chat/:chatId", component: { template: "#home-template", setup: homeSetup }, name: "chat", props: true },
-    { path: "/login", component: { template: "#login-template", setup: loginSetup }, name: "login" }
+    { path: "/login", component: { template: "#login-template", setup: loginSetup }, name: "login" },
+    { path: "/customize", component: { template: "#customize-template", setup: customizeSetup }, name: "customize" }
   ],
 });
 

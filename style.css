@@ -1,5 +1,5 @@
 * {
-    --color-1: #1a5ccd;
+    --color-1: #3c00ff;
     --color-2: #9d66df;
     --color-3: rgb(237, 155, 237);
     --color-4: rgb(120, 120, 221);
@@ -53,6 +53,13 @@ button:hover, main > button:hover, form input[type="submit"]:hover{
 }
 
 .authentication-button {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1rem;
+    text-decoration: none;
+}
+
+.customize-button {
     display: flex;
     justify-content: center;
     margin-bottom: 1rem;
@@ -158,7 +165,7 @@ ul, li {
 }
 
 .chats-container {
-    height: 20rem;
+    height: 30rem;
     overflow-y: auto;
     overflow-x: hidden;
     display: flex;
@@ -168,7 +175,7 @@ ul, li {
 }
 
 .messages-container {
-    height: 20rem;
+    height: 40rem;
     overflow-y: auto;
     overflow-x: hidden;
     display: flex;
@@ -242,6 +249,16 @@ a.router-link-active {
     gap: 1rem;
 }
 
+.custom-tones-list .tone-color {
+    grid-template-columns: minmax(5rem, auto) 1.5rem auto;
+}
+
+.custom-tones-list .tone-color span {
+    word-wrap: break-word;
+    word-break: break-word;
+    white-space: normal;
+}
+
 .custom-tone-form {
     margin-top: 1rem;
     padding: 1rem;
@@ -255,6 +272,12 @@ a.router-link-active {
 .tone-color-item {
     margin-bottom: 1rem;
     padding: 0.5rem;
+    overflow: visible;
+}
+
+.delete-custom-tone-btn {
+    margin-top: 0.5rem;
+    margin-left: 0;
 }
 
 .delete-custom-tone-btn {
@@ -263,19 +286,19 @@ a.router-link-active {
 
 .tone-color {
     display: grid;
-    grid-template-columns: 4.5rem 1.5rem auto;
+    grid-template-columns: minmax(100px, auto) 1.5rem auto;
     align-items: center;
     gap: 0.5rem;
     margin-top: 1rem;
     margin-bottom: 1rem;
 }
 
-.tone-indicator {
-    display: inline-block;
-    padding: 0.1rem 0.4rem;
-    border-radius: 0.6rem;
-    margin-left: 0.4rem;
-    margin-right: 0.4rem;
+.tone-color span {
+    word-wrap: break-word;
+    word-break: break-word;
+    white-space: normal;
+    line-height: 1.4;
+    max-width: 200px;
 }
 
 .tone-indicator {
@@ -285,6 +308,7 @@ a.router-link-active {
     margin-left: 0.4rem;
     margin-right: 0.4rem;
     transition: background-color 0.2s ease;
+    text-wrap: wrap;
 }
 
 .tone-excited, .tone-happy, .tone-joking, .tone-neutral, 
@@ -419,8 +443,13 @@ a.router-link-active {
     }
 
     .tone-color {
-        grid-template-columns: 4rem 1.5rem 1fr;
+        grid-template-columns: minmax(80px, auto) 1.5rem 1fr;
         gap: 0.3rem;
+    }
+    
+    .tone-color span {
+        max-width: 150px;
+        font-size: 0.9rem;
     }
 
     .tone-search {
@@ -498,7 +527,11 @@ a.router-link-active {
     }
 
     .tone-color {
-        grid-template-columns: 3.5rem 1.5rem 1fr;
+        grid-template-columns: minmax(70px, auto) 1.5rem 1fr;
+    }
+    
+    .tone-color span {
+        max-width: 120px;
         font-size: 0.85rem;
     }
 
