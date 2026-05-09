@@ -24,7 +24,7 @@
         <template id="template">
             <div>
                 <router-link to="/">
-                    <h1>My Chatroom</h1>
+                    <h1>ToneChat</h1>
                 </router-link>
                 <router-link to="/login" class="authentication-button">
                     <button>Login / Logout</button>
@@ -294,7 +294,7 @@
                     <div v-if="getAllTones().some(t => t.isCustom)" class="custom-tones-list">
                         <div v-for="tone in getAllTones().filter(t => t.isCustom)" :key="tone.key" class="tone-color-item">
                             <div class="tone-color">
-                                <span :title="tone.name.length > 30 ? tone.name : ''" style="text-transform: capitalize;">{{ tone.name.length > 30? truncateToneName(tone.name) : tone.name }}:</span>
+                                <span :title="tone.name.length > 30 ? tone.name : ''" style="text-transform: capitalize;">{{ tone.name.length > 30? truncateToneName(tone.name) : tone.name }}</span>
                                 <div
                                     :style="{ 
                                         backgroundColor: toneColors[tone.key], 

@@ -250,7 +250,7 @@ a.router-link-active {
 }
 
 .custom-tones-list .tone-color {
-    grid-template-columns: minmax(5rem, auto) 1.5rem auto;
+    grid-template-columns: minmax(6rem, 10rem) 1.5rem auto;
 }
 
 .custom-tones-list .tone-color span {
@@ -286,7 +286,7 @@ a.router-link-active {
 
 .tone-color {
     display: grid;
-    grid-template-columns: minmax(100px, auto) 1.5rem auto;
+    grid-template-columns: minmax(6rem, 10rem) 1.5rem auto;
     align-items: center;
     gap: 0.5rem;
     margin-top: 1rem;
@@ -298,7 +298,7 @@ a.router-link-active {
     word-break: break-word;
     white-space: normal;
     line-height: 1.4;
-    max-width: 200px;
+    max-width: 10rem;
 }
 
 .tone-indicator {
@@ -419,22 +419,40 @@ a.router-link-active {
     .messages-container li {
         max-width: 90%;
         width: 100%;
+        padding: 0.75rem;
+        margin-right: 0.75rem; 
     }
 
     .messages-container li .message-row {
-        grid-template-columns: auto auto 1fr;
-        gap: 0.4rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+        align-items: flex-start;
+        width: 100%;
     }
 
-    .messages-container li button {
-        grid-column: 3;
-        justify-self: start;
-        margin-top: 0.3rem;
+    .messages-container li tone-indicator {
+        align-self: flex-start;
+        margin-left: 0;
+        margin-right: 0;
     }
 
     .messages-container li strong {
+        align-self: flex-start;
         white-space: normal;
         word-break: break-word;
+    }
+
+    .messages-container li .message-text {
+        word-wrap: break-word;
+        word-break: break-word;
+        min-width: 0;
+        width: 100%;
+    }
+
+    .messages-container li button {
+        align-self: flex-start;
+        margin-top: 0.3rem;
     }
 
     .colors {
@@ -443,12 +461,12 @@ a.router-link-active {
     }
 
     .tone-color {
-        grid-template-columns: minmax(80px, auto) 1.5rem 1fr;
+        grid-template-columns: minmax(5rem, 8rem) 1.5rem 1fr;
         gap: 0.3rem;
     }
     
     .tone-color span {
-        max-width: 150px;
+        max-width: 7.5rem;
         font-size: 0.9rem;
     }
 
@@ -527,11 +545,11 @@ a.router-link-active {
     }
 
     .tone-color {
-        grid-template-columns: minmax(70px, auto) 1.5rem 1fr;
+        grid-template-columns: minmax(4rem, 6.5rem) 1.5rem 1fr;
     }
     
     .tone-color span {
-        max-width: 120px;
+        max-width: 6rem;
         font-size: 0.85rem;
     }
 
