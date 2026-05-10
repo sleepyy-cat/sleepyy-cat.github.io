@@ -108,10 +108,146 @@
                     <h2 style="text-align: center;">Messages</h2>
                     <h3 style="text-align: center;">Current chat: {{ currentChatTitle }}</h3>
                     <div style="text-align: center;">
-                        <router-link to="/customize" class="customize-button">
-                            <button>Customize Tone Info</button>
-                        </router-link>
-                        <div class="tone-search">
+                        <button @click="showToneCustomization = !showToneCustomization" class="customize-button">
+                            {{ showToneCustomization ? 'Hide' : 'Show' }} Tone Customization
+                        </button>
+                        <div v-show="showToneCustomization">
+                            <h2>Customize Tone Colors</h2>
+                            <h3>These colors only appear for you</h3>
+                            <div class="colors">
+                                <div v-for="(color, toneName) in toneColors" :key="toneName">
+                                    <div class="tone-color">
+                                        <span :title="getFullToneName(toneName) && getFullToneName(toneName).length > 30 ? getFullToneName(toneName) : ''" style="text-transform: capitalize;">
+                                            {{ truncateToneName(getFullToneName(toneName) || (toneName === 'noTone' ? 'No tone' : toneName)) }}
+                                        </span>
+                                        <div
+                                            :style="{ backgroundColor: color, width: '1.5rem', height: '1.5rem', 
+                                            border: '1px solid #ffffff', borderRadius: '0.2rem', 
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            color: toneTextColors[toneName] || '#000000', fontSize: '0.8rem', fontWeight: 'bold' }"
+                                            @click="startToneEdit(toneName)"
+                                        >T</div>
+                                    </div>
+                                    <form v-if="editingTone === toneName" @submit.prevent="saveToneColor">
+                                        <label>Background:</label>
+                                        <input 
+                                            type="color" 
+                                            v-model="editingToneColor"
+                                            style="width: 3rem; height: 3rem; border: none; padding: 0;"
+                                        />
+                                        <label>Text:</label>
+                                        <input 
+                                            type="color" 
+                                            v-model="editingToneTextColor"
+                                            style="width: 3rem; height: 3rem; border: none; padding: 0;"
+                                        />
+                                        <div 
+                                            :style="{ 
+                                                backgroundColor: editingToneColor, 
+                                                color: editingToneTextColor,
+                                                width: '100px',
+                                                height: '60px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                borderRadius: '0.2rem',
+                                                padding: '0 10px'
+                                            }"
+                                        >
+                                            Sample Text
+                                        </div>
+                                        <button type="submit">Save</button>
+                                        <button type="button" @click="cancelToneEdit">Cancel</button>
+                                    </form>
+                                </div>
+                            </div>
+                            <button @click="resetToDefaults">Reset to Default Colors</button>
+                            <h2 style="margin-top: 1rem;">Your Custom Tones</h2>
+                            <h3>These tones appear for everyone, but the colors only appear for you</h3>
+                            <div v-if="getAllTones().some(t => t.isCustom)" class="custom-tones-list">
+                                <div v-for="tone in getAllTones().filter(t => t.isCustom)" :key="tone.key" class="tone-color-item">
+                                    <div class="tone-color">
+                                        <span :title="tone.name.length > 30 ? tone.name : ''" style="text-transform: capitalize;">{{ tone.name.length > 30? truncateToneName(tone.name) : tone.name }}</span>
+                                        <div
+                                            :style="{ 
+                                                backgroundColor: toneColors[tone.key], 
+                                                width: '1.5rem', 
+                                                height: '1.5rem', 
+                                                border: '1px solid #ffffff', 
+                                                borderRadius: '0.2rem',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                color: toneTextColors[tone.key] || '#000000',
+                                                fontSize: '0.8rem',
+                                                fontWeight: 'bold'
+                                            }"
+                                            @click="startToneEdit(tone.key)"
+                                        >T</div>
+                                    </div>
+                                    <button 
+                                        @click="deleteCustomTone(tone.key)"
+                                        class="delete-custom-tone-btn"
+                                        :disabled="deletingCustomTone === tone.key"
+                                    >
+                                        {{ deletingCustomTone === tone.key ? 'Deleting...' : 'Delete Tone' }}
+                                    </button>
+                                </div>
+                            </div>
+                            <div v-if="showCustomTonesForm" class="custom-tone-form">
+                                <h3>Add Custom Tone</h3>
+                                <form @submit.prevent="addNewCustomTone">
+                                    <input 
+                                        type="text" 
+                                        v-model="newCustomToneName" 
+                                        placeholder="Tone name"
+                                        required
+                                    />
+                                    <label>Background:</label>
+                                    <input 
+                                        type="color" 
+                                        v-model="newCustomToneBgColor"
+                                        required
+                                        style="width: 3rem; height: 3rem; border: none; padding: 0;"
+                                    />
+                                    <label>Text:</label>
+                                    <input 
+                                        type="color" 
+                                        v-model="newCustomToneTextColor"
+                                        required
+                                        style="width: 3rem; height: 3rem; border: none; padding: 0;"
+                                    />
+                                    <div 
+                                        :style="{ 
+                                            backgroundColor: newCustomToneBgColor, 
+                                            color: newCustomToneTextColor,
+                                            width: '100px',
+                                            height: '60px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            borderRadius: '0.2rem',
+                                            padding: '0 10px'
+                                        }"
+                                    >
+                                        {{ 'Sample Text' }}
+                                    </div>
+                                    <button type="submit" :disabled="!newCustomToneName.trim()">
+                                        Add Custom Tone
+                                    </button>
+                                    <button type="button" @click="showCustomTonesForm = false">
+                                        Cancel
+                                    </button>
+                                </form>
+                            </div>
+                            <div v-else>
+                                <button @click="showCustomTonesForm = true" class="add-custom-tone-btn">
+                                    Add Custom Tone
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="tone-search" style="margin-top: 1rem;">
                             <label>Filter by tone: </label>
                             <select v-model="selectedToneFilter" :title="selectedToneFilter && selectedToneFilter.length > 30 ? selectedToneFilter : ''">
                                 <option value="">All tones</option>
@@ -220,160 +356,6 @@
                     <button @click="handleLogin" class="login-button">
                         Log In
                     </button>
-                </div>
-            </div>
-        </template>
-
-        <template id="customize-template">
-            <div>
-                <router-link to="/">
-                    Return to Chats List
-                </router-link>
-            </div>
-            <div>
-                <button @click="toggleColorsSection" class="toggle-colors-btn" style="margin-top: 1rem;">
-                    {{ showColorsSection ? 'Hide' : 'Show' }} Color Editing Section
-                </button>
-                <div v-show="showColorsSection">
-                    <h2>Customize Tone Colors</h2>
-                    <h3>These colors only appear for you</h3>
-                    <div class="colors">
-                        <div v-for="(color, toneName) in toneColors" :key="toneName">
-                            <div class="tone-color">
-                                <span :title="getFullToneName(toneName) && getFullToneName(toneName).length > 30 ? getFullToneName(toneName) : ''" style="text-transform: capitalize;">
-                                    {{ truncateToneName(getFullToneName(toneName) || (toneName === 'noTone' ? 'No tone' : toneName)) }}
-                                </span>
-                                <div
-                                    :style="{ backgroundColor: color, width: '1.5rem', height: '1.5rem', 
-                                    border: '1px solid #ffffff', borderRadius: '0.2rem', 
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    color: toneTextColors[toneName] || '#000000', fontSize: '0.8rem', fontWeight: 'bold' }"
-                                    @click="startToneEdit(toneName)"
-                                >T</div>
-                            </div>
-                            <form v-if="editingTone === toneName" @submit.prevent="saveToneColor">
-                                <label>Background:</label>
-                                <input 
-                                    type="color" 
-                                    v-model="editingToneColor"
-                                    style="width: 3rem; height: 3rem; border: none; padding: 0;"
-                                />
-                                <label>Text:</label>
-                                <input 
-                                    type="color" 
-                                    v-model="editingToneTextColor"
-                                    style="width: 3rem; height: 3rem; border: none; padding: 0;"
-                                />
-                                <div 
-                                    :style="{ 
-                                        backgroundColor: editingToneColor, 
-                                        color: editingToneTextColor,
-                                        width: '100px',
-                                        height: '60px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        borderRadius: '0.2rem',
-                                        padding: '0 10px'
-                                    }"
-                                >
-                                    Sample Text
-                                </div>
-                                <button type="submit">Save</button>
-                                <button type="button" @click="cancelToneEdit">Cancel</button>
-                            </form>
-                        </div>
-                    </div>
-                    <button @click="resetToDefaults">Reset to Default Colors</button>
-                </div>
-                
-                <button @click="toggleTonesSection" class="toggle-tones-btn" style="margin-top: 1rem;">
-                    {{ showTonesSection ? 'Hide' : 'Show' }} Tone Editing Section
-                </button>
-                <div v-show="showTonesSection">
-                    <h2>Your Custom Tones</h2>
-                    <h3>These tones appear for everyone, but the colors only appear for you</h3>
-                    <div v-if="getAllTones().some(t => t.isCustom)" class="custom-tones-list">
-                        <div v-for="tone in getAllTones().filter(t => t.isCustom)" :key="tone.key" class="tone-color-item">
-                            <div class="tone-color">
-                                <span :title="tone.name.length > 30 ? tone.name : ''" style="text-transform: capitalize;">{{ tone.name.length > 30? truncateToneName(tone.name) : tone.name }}</span>
-                                <div
-                                    :style="{ 
-                                        backgroundColor: toneColors[tone.key], 
-                                        width: '1.5rem', 
-                                        height: '1.5rem', 
-                                        border: '1px solid #ffffff', 
-                                        borderRadius: '0.2rem',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        color: toneTextColors[tone.key] || '#000000',
-                                        fontSize: '0.8rem',
-                                        fontWeight: 'bold'
-                                    }"
-                                    @click="startToneEdit(tone.key)"
-                                >T</div>
-                            </div>
-                            <button 
-                                @click="deleteCustomTone(tone.key)"
-                                class="delete-custom-tone-btn"
-                                :disabled="deletingCustomTone === tone.key"
-                            >
-                                {{ deletingCustomTone === tone.key ? 'Deleting...' : 'Delete Tone' }}
-                            </button>
-                        </div>
-                    </div>
-                    <div v-if="showCustomTonesForm" class="custom-tone-form">
-                        <h3>Add Custom Tone</h3>
-                        <form @submit.prevent="addNewCustomTone">
-                            <input 
-                                type="text" 
-                                v-model="newCustomToneName" 
-                                placeholder="Tone name"
-                                required
-                            />
-                            <label>Background:</label>
-                            <input 
-                                type="color" 
-                                v-model="newCustomToneBgColor"
-                                required
-                                style="width: 3rem; height: 3rem; border: none; padding: 0;"
-                            />
-                            <label>Text:</label>
-                            <input 
-                                type="color" 
-                                v-model="newCustomToneTextColor"
-                                required
-                                style="width: 3rem; height: 3rem; border: none; padding: 0;"
-                            />
-                            <div 
-                                :style="{ 
-                                    backgroundColor: newCustomToneBgColor, 
-                                    color: newCustomToneTextColor,
-                                    width: '100px',
-                                    height: '60px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    borderRadius: '0.2rem',
-                                    padding: '0 10px'
-                                }"
-                            >
-                                {{ 'Sample Text' }}
-                            </div>
-                            <button type="submit" :disabled="!newCustomToneName.trim()">
-                                Add Custom Tone
-                            </button>
-                            <button type="button" @click="showCustomTonesForm = false">
-                                Cancel
-                            </button>
-                        </form>
-                    </div>
-                    <div v-else>
-                        <button @click="showCustomTonesForm = true" class="add-custom-tone-btn">
-                            Add Custom Tone
-                        </button>
-                    </div>
                 </div>
             </div>
         </template>

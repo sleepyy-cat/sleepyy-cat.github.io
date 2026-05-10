@@ -771,6 +771,7 @@ function homeSetup() {
   const newCustomToneBgColor = ref("#ffffff");
   const newCustomToneTextColor = ref("#000000");
   const deletingCustomTone = ref(null);
+  const showToneCustomization = ref(false);
   
   function addNewCustomTone() {
     if (!newCustomToneName.value.trim()) return;
@@ -1008,7 +1009,8 @@ function homeSetup() {
     isMessageCountLoaded,
     toneOptionsWithTooltips,
     truncateToneName,
-    getFullToneName
+    getFullToneName,
+    showToneCustomization
   };
 }
 
@@ -1161,8 +1163,7 @@ const router = createRouter({
   routes: [
     { path: "/", component: { template: "#home-template", setup: homeSetup }, name: "home" },
     { path: "/chat/:chatId", component: { template: "#home-template", setup: homeSetup }, name: "chat", props: true },
-    { path: "/login", component: { template: "#login-template", setup: loginSetup }, name: "login" },
-    { path: "/customize", component: { template: "#customize-template", setup: customizeSetup }, name: "customize" }
+    { path: "/login", component: { template: "#login-template", setup: loginSetup }, name: "login" }
   ],
 });
 
