@@ -29,9 +29,6 @@
                 <router-link to="/login" class="authentication-button">
                     <button>Login / Logout</button>
                 </router-link>
-                <router-link to="/customize" class="customize-button">
-                    <button>Customize Tone Info</button>
-                </router-link>
                 <router-view></router-view>
             </div>
         </template>
@@ -102,26 +99,31 @@
                         </li>
                     </ul>
                 </div>
-                <div v-if="isInChat && $graffitiSession.value">
+                <div v-if="isInChat && $graffitiSession.value" style="text-align: center;">
                     <router-link to="/">
                         Return to Chats List
                     </router-link>
                 </div>
                 <div v-if="channel && $route.params.chatId" class="messaging-interface">
-                    <h2>Messages</h2>
-                    <h3>Current chat: {{ currentChatTitle }}</h3>
-                    <div class="tone-search">
-                        <label>Filter by tone: </label>
-                        <select v-model="selectedToneFilter" :title="selectedToneFilter && selectedToneFilter.length > 30 ? selectedToneFilter : ''">
-                            <option value="">All tones</option>
-                            <option v-for="tone in toneOptionsWithTooltips" :key="tone.fullName" :value="tone.fullName" :title="tone.fullName.length > 30 ? tone.fullName : ''">
-                                {{ tone.truncatedName }}
-                            </option>
-                        </select>
-                        <span v-if="filteredMessagesCount !== sortedMessageObjects.length && sortedMessageObjects.length > 0" class="filter-stats">
-                            Showing {{ filteredMessagesCount }} of {{ sortedMessageObjects.length }} messages
-                            <button @click="selectedToneFilter = ''">Clear</button>
-                        </span>
+                    <h2 style="text-align: center;">Messages</h2>
+                    <h3 style="text-align: center;">Current chat: {{ currentChatTitle }}</h3>
+                    <div style="text-align: center;">
+                        <router-link to="/customize" class="customize-button">
+                            <button>Customize Tone Info</button>
+                        </router-link>
+                        <div class="tone-search">
+                            <label>Filter by tone: </label>
+                            <select v-model="selectedToneFilter" :title="selectedToneFilter && selectedToneFilter.length > 30 ? selectedToneFilter : ''">
+                                <option value="">All tones</option>
+                                <option v-for="tone in toneOptionsWithTooltips" :key="tone.fullName" :value="tone.fullName" :title="tone.fullName.length > 30 ? tone.fullName : ''">
+                                    {{ tone.truncatedName }}
+                                </option>
+                            </select>
+                            <span v-if="filteredMessagesCount !== sortedMessageObjects.length && sortedMessageObjects.length > 0" class="filter-stats">
+                                Showing {{ filteredMessagesCount }} of {{ sortedMessageObjects.length }} messages
+                                <button @click="selectedToneFilter = ''">Clear</button>
+                            </span>
+                        </div>
                     </div>
                     <p v-if="areMessageObjectsLoading && channel">
                         <em>Loading messages...</em>

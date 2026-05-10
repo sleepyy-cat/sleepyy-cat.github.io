@@ -175,7 +175,7 @@ ul, li {
 }
 
 .messages-container {
-    height: 40rem;
+    height: 35rem;
     overflow-y: auto;
     overflow-x: hidden;
     display: flex;
