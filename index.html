@@ -55,7 +55,7 @@
                     </p>
                     <ul v-if="chats.length > 0" class="chats-container" ref="chatsContainer">
                         <li v-for="chat in sortedChats" :key="chat.url">
-                            <router-link :to="`/chat/${chat.value.channel}`" @click="selectChat(chat)">
+                            <router-link :to="`/chat/${chat.value.channel}`" @click="selectChat(chat)" style="font-size: 1.5rem;">
                                 {{ chat.value.title }}
                             </router-link>
                             <span v-if="isMessageCountLoaded(chat.value.channel)" class="message-count">
