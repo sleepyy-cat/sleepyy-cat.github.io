@@ -3,6 +3,7 @@
     --color-2: #9d66df;
     --color-3: rgb(237, 155, 237);
     --color-4: rgb(120, 120, 221);
+    --color-5: rgb(245, 185, 241);
     color: var(--color-1);
 }
 
@@ -174,6 +175,7 @@ ul, li {
 
 .messages-container {
     height: 35rem;
+    background: var(--color-5);
     overflow-y: auto;
     overflow-x: hidden;
     display: flex;
@@ -299,6 +301,10 @@ a.router-link-active {
     max-width: 10rem;
 }
 
+.tone-color div {
+    cursor: pointer;
+}
+
 .tone-indicator {
     display: inline-block;
     padding: 0.1rem 0.4rem;
@@ -329,7 +335,7 @@ a.router-link-active {
 }
 
 *::-webkit-scrollbar-thumb {
-    background: var(--color-1);
+    background: red;
     border-radius: 0.2rem;
 }
 
